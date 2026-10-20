@@ -1,1 +1,61 @@
-<!doctype html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#184a3d"><title>Productions locales | CCPG</title><link rel="preconnect" href="https://basemaps.cartocdn.com"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"><link rel="stylesheet" href="style.css"></head><body><div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><span class="brand-mark">✳</span><div><small>COMMUNAUTÉ DE COMMUNES</small><strong>Pont du Gard</strong></div></div><h1>Consommer local,<br><em>près de chez vous.</em></h1><p class="intro">Explorez les productions et points de vente du territoire.</p><div class="search-wrap"><label for="search">Rechercher un producteur, une commune…</label><input id="search" autocomplete="off" type="search" placeholder="Nom, adresse, produit…"></div><div class="filter-head"><h2>Productions</h2><button id="reset" class="link-button" type="button">Tout afficher</button></div><div id="filters" class="filters"></div><div class="bottom"><p id="counter" aria-live="polite">Chargement des données…</p><button id="reframe" type="button" class="secondary">⌖ &nbsp;Recentrer la carte</button><p class="note">Les informations sont indicatives. Vérifiez les horaires avant déplacement.</p></div></aside><main class="map-wrap"><div id="map" role="application" aria-label="Carte interactive des productions locales"></div><button class="mobile-toggle" id="mobile-toggle" type="button" aria-expanded="false" aria-controls="sidebar">☰ &nbsp; Catégories & recherche</button><div class="map-chip" id="zoom-chip">Carte des producteurs locaux</div></main></div><script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#b23228">
+  <title>Produits locaux | CCPG</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <img class="brand-logo" src="assets/ccpg-logo.png" alt="Logo de la Communauté de communes du Pont du Gard">
+      </div>
+
+      <h1>Consommer local,<br><em>près de chez vous.</em></h1>
+      <p class="intro">Explorez les productions et points de vente du territoire de la Communauté de communes du Pont du Gard.</p>
+
+      <div class="search-wrap">
+        <label for="search">Rechercher un producteur, une commune…</label>
+        <input id="search" autocomplete="off" type="search" placeholder="Nom, adresse, produit…">
+      </div>
+
+      <div class="section-head">
+        <h2>Fonds de carte</h2>
+      </div>
+      <div class="basemap-switch" role="tablist" aria-label="Choix du fond de carte">
+        <button id="btn-basemap-light" class="basemap-btn active" type="button" data-map="light">Plan épuré</button>
+        <button id="btn-basemap-ortho" class="basemap-btn" type="button" data-map="ortho">Orthophoto</button>
+      </div>
+
+      <div class="filter-head">
+        <h2>Productions</h2>
+        <button id="reset" class="link-button" type="button">Tout afficher</button>
+      </div>
+      <div id="filters" class="filters"></div>
+
+      <div class="bottom">
+        <p id="counter" aria-live="polite">Chargement des données…</p>
+        <button id="reframe" type="button" class="secondary">⌖ &nbsp; Recentrer la carte</button>
+        <p id="territory-status" class="status">Chargement du contour des communes…</p>
+        <p class="note">Les informations sont indicatives. Vérifiez les horaires avant déplacement.</p>
+      </div>
+    </aside>
+
+    <main class="map-wrap">
+      <div id="map" role="application" aria-label="Carte interactive des productions locales"></div>
+      <button class="mobile-toggle" id="mobile-toggle" type="button" aria-expanded="false" aria-controls="sidebar">☰ &nbsp; Catégories & recherche</button>
+      <div class="map-chip" id="zoom-chip">Carte des producteurs locaux</div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
