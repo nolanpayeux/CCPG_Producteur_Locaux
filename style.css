@@ -109,3 +109,23 @@ h1 em{font-style:normal;color:var(--ccpg-green)}
   .leaflet-control-zoom{display:none!important}
   .leaflet-container{print-color-adjust:exact;-webkit-print-color-adjust:exact}
 }
+
+/* V6 — Administration locale (aucune authentification serveur) */
+.edit-launch{position:absolute;top:61px;right:14px;z-index:900;padding:11px 15px;border:0;border-radius:22px;background:#a72e27;color:white;box-shadow:0 3px 12px #0002;font:600 12px 'DM Sans',sans-serif;cursor:pointer}
+.edit-launch.active{background:#623028}.edit-panel[hidden],#edit-form[hidden]{display:none!important}
+.edit-panel{position:fixed;right:14px;top:112px;z-index:1100;width:min(370px,calc(100vw - 28px));max-height:calc(100dvh - 128px);overflow:auto;padding:16px;border-radius:16px;background:#fffaf8;box-shadow:0 10px 45px #24140f50;border:1px solid #e8ccc4;font-size:12px}
+.edit-panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#772d27;font-size:15px}
+.edit-panel-head button{border:0;background:transparent;font-size:22px;cursor:pointer}
+.edit-warning{background:#fff0df;border-radius:8px;padding:10px;color:#76532b;line-height:1.5}
+.edit-actions{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}.edit-actions button,.edit-panel button{cursor:pointer}
+.edit-actions button,#edit-locate{padding:9px;border-radius:8px;background:#f4e7e3;border:1px solid #dcc4bd;color:#722e29;font:600 11px 'DM Sans',sans-serif}
+#edit-status{color:#77635e;line-height:1.5}
+#edit-form{display:grid;gap:9px;margin-top:12px}
+#edit-form label{display:grid;gap:4px;font-weight:600;color:#59443e}
+#edit-form input,#edit-form select,#edit-form textarea{width:100%;border:1px solid #d9cbc4;border-radius:8px;padding:9px;font:12px 'DM Sans',sans-serif;background:white}
+.edit-coords{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.edit-form-actions{display:flex;gap:6px;flex-wrap:wrap}
+.edit-form-actions button{background:#a72e27;color:white;border:0;border-radius:8px;padding:10px;font-weight:600}
+.edit-form-actions button:nth-child(2){background:#6a655f}.edit-form-actions button.delete{background:#8c1c1c}
+.edit-panel .is-location-mode{background:#e4f1e9!important}
+@media(max-width:760px){.edit-launch{top:57px;right:10px}.edit-panel{top:110px;max-height:calc(100dvh - 180px)}}
