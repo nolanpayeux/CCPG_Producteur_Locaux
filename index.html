@@ -50,9 +50,30 @@
       <div id="map" role="application" aria-label="Carte interactive des productions locales"></div>
       <button class="mobile-toggle" id="mobile-toggle" type="button" aria-expanded="false" aria-controls="sidebar">☰ &nbsp; Catégories & recherche</button>
       <div class="map-chip" id="zoom-chip">Carte des producteurs locaux</div>
+      <button class="print-entry" id="open-print" type="button">⎙ &nbsp; Préparer un PDF</button>
     </main>
   </div>
 
+  <div class="print-workspace" id="print-workspace" aria-hidden="true">
+    <div class="print-toolbar">
+      <div><strong>Préparer l'export PDF</strong><p>Déplacez la carte, zoomez et choisissez le format avant l'impression.</p></div>
+      <label for="print-orientation">Disposition
+        <select id="print-orientation"><option value="landscape">A4 paysage</option><option value="portrait">A4 portrait</option></select>
+      </label>
+      <button type="button" class="print-action" id="print-now">Imprimer / Enregistrer en PDF</button>
+      <button type="button" id="print-close">✕ Quitter</button>
+    </div>
+    <div class="print-canvas">
+      <div class="print-sheet landscape" id="print-sheet">
+        <header class="print-sheet-header">
+          <img src="assets/ccpg-logo.png" alt="Communauté de communes du Pont du Gard">
+          <div><strong>Consommer local, près de chez vous.</strong><span>Carte des producteurs du territoire</span></div>
+        </header>
+        <div class="print-map-holder" id="print-map-holder"></div>
+        <footer class="print-sheet-footer"><span>Communauté de communes du Pont du Gard — Carte des producteurs locaux</span><span id="print-date"></span></footer>
+      </div>
+    </div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
