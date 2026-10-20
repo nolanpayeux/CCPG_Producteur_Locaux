@@ -48,6 +48,7 @@
 
     <main class="map-wrap">
       <div id="map" role="application" aria-label="Carte interactive des productions locales"></div>
+      <button class="edit-launch" id="edit-launch" type="button">✎ Mode édition</button>
       <button class="mobile-toggle" id="mobile-toggle" type="button" aria-expanded="false" aria-controls="sidebar">☰ &nbsp; Catégories & recherche</button>
       <div class="map-chip" id="zoom-chip">Carte des producteurs locaux</div>
       <button class="print-entry" id="open-print" type="button">⎙ &nbsp; Préparer un PDF</button>
@@ -74,6 +75,30 @@
       </div>
     </div>
   </div>
+  <section id="edit-panel" class="edit-panel" hidden aria-label="Édition locale des producteurs">
+    <div class="edit-panel-head"><strong>Édition locale des producteurs</strong><button id="edit-close" type="button" aria-label="Fermer">×</button></div>
+    <p class="edit-warning">Mode de travail local : rien n'est sauvegardé sur GitHub avant export et publication.</p>
+    <div class="edit-actions">
+      <button type="button" id="edit-add">+ Ajouter un point</button>
+      <button type="button" id="edit-undo">↶ Annuler</button>
+      <button type="button" id="edit-export">⬇ Exporter GeoJSON</button>
+    </div>
+    <p id="edit-status" role="status">Cliquez sur un producteur pour le modifier, ou ajoutez un nouveau point.</p>
+    <form id="edit-form" hidden>
+      <label>Nom du producteur *<input name="name" required maxlength="250"></label>
+      <label>Catégorie *<select name="categorie" required id="edit-category"></select></label>
+      <label>Adresse<input name="Adresse" maxlength="400"></label>
+      <label>Téléphone<input name="tel" maxlength="100"></label>
+      <label>Site internet / contact<input name="liens" maxlength="500"></label>
+      <label>Description<textarea name="description" rows="3"></textarea></label>
+      <div class="edit-coords">
+        <label>Latitude<input name="lat" type="number" step="any" min="-90" max="90" required></label>
+        <label>Longitude<input name="lon" type="number" step="any" min="-180" max="180" required></label>
+      </div>
+      <button type="button" id="edit-locate">⌖ Positionner sur la carte</button>
+      <div class="edit-form-actions"><button type="submit">Enregistrer</button><button type="button" id="edit-cancel">Annuler</button><button class="delete" type="button" id="edit-delete">Supprimer</button></div>
+    </form>
+  </section>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
