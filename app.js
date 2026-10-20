@@ -76,7 +76,7 @@ const layer = L.markerClusterGroup({
   spiderfyOnMaxZoom: true,
   zoomToBoundsOnClick: true,
   maxClusterRadius: 52,
-  disableClusteringAtZoom: 17,
+  disableClusteringAtZoom: 15,
   iconCreateFunction(c) {
     const n = c.getChildCount();
     const size = n < 10 ? 40 : n < 30 ? 48 : 56;
@@ -96,11 +96,17 @@ function iconSize() {
 }
 function iconForFeature(f) {
   const size = iconSize();
+  // Les marqueurs qui ont la meme position restent geographiquement exacts.
+  // Seule leur ancre graphique est decalee a fort zoom pour les distinguer.
+  const duplicates = f._duplicateCount || 1;
+  const spread = map.getZoom() >= 15 && duplicates > 1;
+  const gap = Math.max(16, size * .46);
+  const offsetX = spread ? (f._duplicateIndex - (duplicates - 1) / 2) * 2 * gap : 0;
   return L.divIcon({
     className: 'marker-pin',
     html: `<img src="${imagePath(f.properties.icone || iconFor(f.properties.categorie))}" alt="">`,
     iconSize: [size, size],
-    iconAnchor: [size / 2, size * .94],
+    iconAnchor: [size / 2 - offsetX, size * .94],
     popupAnchor: [0, -size * .7]
   });
 }
@@ -257,6 +263,18 @@ async function load() {
     if (!response.ok) throw new Error('HTTP ' + response.status);
     const data = await response.json();
     features = data.features.filter(f => f?.geometry?.type === 'Point' && Array.isArray(f.geometry.coordinates));
+    const samePositions = new Map();
+    for (const f of features) {
+      const key = f.geometry.coordinates.join(',');
+      if (!samePositions.has(key)) samePositions.set(key, []);
+      samePositions.get(key).push(f);
+    }
+    for (const group of samePositions.values()) {
+      group.forEach((f, i) => {
+        f._duplicateIndex = i;
+        f._duplicateCount = group.length;
+      });
+    }
     for (const f of features) {
       const [lon, lat] = f.geometry.coordinates;
       const marker = L.marker([lat, lon], { icon: iconForFeature(f), title: f.properties.name || 'Site' }).bindPopup(() => popup(f));
@@ -296,3 +314,50 @@ document.getElementById('mobile-toggle').onclick = () => {
 };
 
 load();
+
+
+// Composition PDF : la carte Leaflet est déplacée dans une page A4 d'aperçu.
+// L'impression est lancée via le dialogue du navigateur, avec « Enregistrer au format PDF ».
+const printPageRule = document.createElement('style');
+printPageRule.id='print-page-size';
+printPageRule.textContent='@page { size: A4 landscape; margin: 0; }';
+document.head.appendChild(printPageRule);
+const printWorkspace = document.getElementById('print-workspace');
+const printSheet = document.getElementById('print-sheet');
+const printHolder = document.getElementById('print-map-holder');
+const originalMapParent = document.getElementById('map').parentElement;
+const mapElement = document.getElementById('map');
+let printMode = false;
+function updatePrintMap(){ map.invalidateSize({animate:false}); }
+function openPrintMode(){
+  if(printMode)return;
+  printMode=true;
+  document.getElementById('print-date').textContent=new Date().toLocaleDateString('fr-FR');
+  printWorkspace.classList.add('open');
+  printWorkspace.setAttribute('aria-hidden','false');
+  printHolder.appendChild(mapElement);
+  requestAnimationFrame(()=>requestAnimationFrame(updatePrintMap));
+}
+function closePrintMode(){
+  if(!printMode)return;
+  printMode=false;
+  originalMapParent.insertBefore(mapElement,originalMapParent.firstChild);
+  printWorkspace.classList.remove('open');
+  printWorkspace.setAttribute('aria-hidden','true');
+  requestAnimationFrame(()=>requestAnimationFrame(updatePrintMap));
+}
+document.getElementById('open-print').onclick=openPrintMode;
+document.getElementById('print-close').onclick=closePrintMode;
+document.getElementById('print-orientation').onchange=e=>{
+  const orientation=e.target.value;
+  printPageRule.textContent=`@page { size: A4 ${orientation}; margin: 0; }`;
+  printSheet.classList.toggle('portrait',orientation==='portrait');
+  printSheet.classList.toggle('landscape',orientation==='landscape');
+  requestAnimationFrame(()=>requestAnimationFrame(updatePrintMap));
+};
+document.getElementById('print-now').onclick=()=>{
+  // Laisser à Leaflet un court délai pour finir de dessiner les tuiles après un zoom.
+  updatePrintMap();
+  setTimeout(()=>window.print(),650);
+};
+window.addEventListener('beforeprint',()=>{if(!printMode)openPrintMode();updatePrintMap()});
