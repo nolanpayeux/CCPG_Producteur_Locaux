@@ -663,6 +663,25 @@ map.on('click', e => {
   locatingFeature=false;
   setStatus('Coordonnées mises à jour. Cliquez sur Enregistrer pour valider.');
 });
+// Une modification validée ici n'est PAS une publication du site public.
+const savedModal = document.getElementById('edit-saved-modal');
+const savedModalOk = document.getElementById('edit-saved-ok');
+let savedModalPreviousFocus = null;
+function showLocalSaveNotice() {
+  savedModalPreviousFocus = document.activeElement;
+  savedModal.hidden = false;
+  savedModalOk.focus();
+}
+function closeLocalSaveNotice() {
+  savedModal.hidden = true;
+  if (savedModalPreviousFocus?.isConnected) savedModalPreviousFocus.focus();
+}
+savedModalOk.addEventListener('click', closeLocalSaveNotice);
+savedModal.addEventListener('click', e => { if(e.target === savedModal) closeLocalSaveNotice(); });
+savedModal.addEventListener('keydown', e => {
+  if(e.key === 'Escape') { e.preventDefault(); closeLocalSaveNotice(); }
+  if(e.key === 'Tab') { e.preventDefault(); savedModalOk.focus(); }
+});
 editForm.addEventListener('submit', e => {
   e.preventDefault();
   if (!selectedFeature) return;
@@ -687,6 +706,7 @@ editForm.addEventListener('submit', e => {
   if (!features.includes(selectedFeature)) features.push(selectedFeature);
   clearDragPreview();refreshEditionData();editForm.hidden=true;selectedFeature=null;
   setStatus('Modifications enregistrées dans cette session. Exportez le GeoJSON pour les conserver.');
+  showLocalSaveNotice();
 });
 document.getElementById('edit-delete').onclick = () => {
   if (!selectedFeature || !features.includes(selectedFeature)) return;
@@ -786,6 +806,7 @@ document.getElementById('group-save').onclick=()=>{
   snapshot();const id=updateGroup(g,name,L.latLng(lat,lon));
   refreshEditionData();document.getElementById('group-select').value=id;refreshGroupControls();
   setStatus('Groupe enregistré. Exportez le GeoJSON pour conserver les modifications.');
+  showLocalSaveNotice();
 };
 document.getElementById('group-dissolve').onclick=()=>{
   const g=resolveSelectedGroup();if(!g)return;
