@@ -117,11 +117,23 @@ function iconForFeature(f) {
   });
 }
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-function validUrl(v) {
-  let s = String(v || '').trim();
-  if (!s || /^(pas de|aucun|non)/i.test(s)) return null;
-  if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
-  try { const u = new URL(s); return ['https:', 'http:'].includes(u.protocol) ? u.href : null; } catch { return null; }
+function contactLinks(value) {
+  const entries = String(value ?? '').split(/[\n;,]+/).map(s => s.trim()).filter(Boolean);
+  const links = [];
+  for (const value of entries) {
+    if (/^(pas de|aucun|non|sans site)/i.test(value)) continue;
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      links.push(`<p>✉ <a href="mailto:${esc(value)}">Envoyer un e-mail</a> <span class="popup-link-detail">${esc(value)}</span></p>`);
+      continue;
+    }
+    const candidate = /^https?:\/\//i.test(value) ? value : 'https://' + value;
+    try {
+      const parsed = new URL(candidate);
+      if (!['https:', 'http:'].includes(parsed.protocol) || !parsed.hostname.includes('.')) continue;
+      links.push(`<p>↗ <a href="${esc(parsed.href)}" target="_blank" rel="noopener noreferrer">Site internet</a> <span class="popup-link-detail">${esc(parsed.hostname.replace(/^www\./, ''))}</span></p>`);
+    } catch (_) { /* Valeur non reconnue : ne pas créer de lien erroné. */ }
+  }
+  return [...new Set(links)].join('');
 }
 // Nettoie uniquement la représentation HTML : le GeoJSON source reste intact.
 function readableDescription(raw) {
@@ -141,9 +153,9 @@ function readableDescription(raw) {
 function popup(f) {
   const p = f.properties;
   const cat = categories.find(c => c.key === p.categorie);
-  const site = validUrl(p.liens);
+  const contacts = contactLinks(p.liens ?? p.site_internet ?? p.website ?? p.url);
   const desc = esc(readableDescription(p.description)).replace(/\n/g, '<br>');
-  return `<div class="popup-head"><img src="${imagePath(p.icone || iconFor(p.categorie))}" alt=""><div><h3>${esc(p.name || 'Producteur local')}</h3><small>${esc(cat?.name || p.categorie || 'Production locale')}</small></div></div><div class="popup-section">${p.Adresse ? `<p>📍 ${esc(p.Adresse)}</p>` : ''}${p.tel ? `<p>☎ ${esc(p.tel)}</p>` : ''}${desc ? `<p>${desc}</p>` : ''}${site ? `<p><a href="${esc(site)}" target="_blank" rel="noopener noreferrer">Visiter le site ↗</a></p>` : ''}</div>`;
+  return `<div class="popup-head"><img src="${imagePath(p.icone || iconFor(p.categorie))}" alt=""><div><h3>${esc(p.name || 'Producteur local')}</h3><small>${esc(cat?.name || p.categorie || 'Production locale')}</small></div></div><div class="popup-section">${p.Adresse ? `<p>📍 ${esc(p.Adresse)}</p>` : ''}${p.tel ? `<p>☎ ${esc(p.tel)}</p>` : ''}${desc ? `<p>${desc}</p>` : ''}${contacts}</div>`;
 }
 function initFilters() {
   const wrap = document.getElementById('filters');
@@ -251,7 +263,7 @@ function sitePopup(group) {
     return `<span class="site-category"><img src="${imagePath(iconFor(c))}" alt="">${esc(category?.name||c)}</span>`;
   }).join('');
   const address = group.members.find(x=>x.f.properties.Adresse)?.f.properties.Adresse;
-  return `<div class="site-popup"><h3>${esc(group.title)}</h3>${address?`<p>📍 ${esc(address)}</p>`:''}<p><strong>${group.categories.length} production${group.categories.length>1?'s':''}</strong></p><div class="site-categories">${categoriesHtml}</div><p class="site-hint">Zoomez pour consulter chaque production individuellement.</p></div>`;
+  return `<div class="site-popup"><h3>${esc(group.title)}</h3>${address?`<p>📍 ${esc(address)}</p>`:''}<p><strong>${group.categories.length} production${group.categories.length>1?'s':''}</strong></p><div class="site-categories">${categoriesHtml}</div></div>`;
 }
 function siteMarker(group) {
   const marker = L.marker(group.position, {
