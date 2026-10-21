@@ -135,3 +135,16 @@ h1 em{font-style:normal;color:var(--ccpg-green)}
 .edit-launch{top:61px!important;right:14px!important}
 #print-workspace [hidden], .print-entry[hidden]{display:none!important}
 @media(max-width:760px){.print-entry{top:105px!important;right:10px!important}.edit-launch{top:57px!important;right:10px!important}}
+
+/* V10 — Site géographique unique et éventail des productions */
+.site-multi-marker{background:transparent;border:0}
+.site-multi-dot{display:grid;place-items:center;width:100%;height:100%;border:3px solid white;border-radius:50%;background:#b33930;color:white;font-weight:800;font-size:14px;box-shadow:0 2px 8px #44241e55}
+.site-anchor{background:transparent;border:0;pointer-events:auto}
+.site-anchor span{display:grid;place-items:center;background:#fff;color:#8f2a23;border:2px solid #ab433a;border-radius:50%;width:25px;height:25px;font-size:11px;font-weight:800;box-shadow:0 1px 4px #50332d44}
+.site-popup h3{margin:0 0 8px;color:#772e27;font-size:16px}
+.site-popup p{margin:7px 0;font-size:12px}
+.site-categories{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.site-category{display:flex;align-items:center;gap:4px;padding:4px 7px;border-radius:18px;background:#f8efeb;font-size:11px}
+.site-category img{height:24px;width:24px;object-fit:contain}
+.site-hint{color:#82746d;font-style:italic}
+.site-separator{border:0;border-top:1px solid #eadcda;margin:12px 0}
