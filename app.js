@@ -178,6 +178,32 @@ const siteMarkers = [];
 const siteFanMarkers = L.layerGroup();
 const siteConnections = L.layerGroup();
 const SITE_MAX_DISTANCE_METERS = 130;
+// Rattachement vérifié par proximité et adresse : le libellé générique de
+// la ligne légumes correspond au même chemin que Les Vergers de l'Ilon.
+// La géométrie et les propriétés source restent intactes.
+const SITE_ALIASES = [{
+  originalName:'Meynes, Producteurs légumes',
+  canonicalName:"Les Vergers de l'ilon",
+  addressContains:'mas de l ilon',
+  near:[43.8839,4.5805], maxMeters:120
+}];
+function canonicalSiteName(entry) {
+  const name=normalizeSiteText(entry.f.properties.name);
+  const addr=normalizeSiteText(entry.f.properties.Adresse);
+  for(const a of SITE_ALIASES){
+    if(name===normalizeSiteText(a.originalName) && addr.includes(a.addressContains)
+      && map.distance(entry.originalLatLng,L.latLng(a.near)) <= a.maxMeters){
+      return normalizeSiteText(a.canonicalName);
+    }
+  }
+  return name;
+}
+function siteAddressKey(entry) {
+  const addr=normalizeSiteText(entry.f.properties.Adresse);
+  if(canonicalSiteName(entry)===normalizeSiteText("Les Vergers de l'ilon") && addr.includes('mas de l ilon')) return 'mas de l ilon meynes';
+  return addr;
+}
+
 
 function normalizeSiteText(v) {
   return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -187,8 +213,8 @@ function getSiteGroups(entries) {
   const groups = [];
   // Un nom seul ne suffit pas à fusionner : il faut une adresse compatible ET une proximité réelle.
   for (const entry of entries) {
-    const name = normalizeSiteText(entry.f.properties.name);
-    const address = normalizeSiteText(entry.f.properties.Adresse);
+    const name = canonicalSiteName(entry);
+    const address = siteAddressKey(entry);
     let group = groups.find(g => name && g.name === name &&
       ((address && g.address && address === g.address) || (!address && !g.address)) &&
       g.members.every(x => map.distance(x.originalLatLng, entry.originalLatLng) <= SITE_MAX_DISTANCE_METERS));
@@ -206,7 +232,7 @@ function getSiteGroups(entries) {
     })[0];
     group.position = medoid.originalLatLng;
     group.categories = [...new Set(group.members.map(x => x.f.properties.categorie))];
-    group.title = medoid.f.properties.name || 'Producteur local';
+    group.title = group.members.find(x=>normalizeSiteText(x.f.properties.name)===group.name)?.f.properties.name || medoid.f.properties.name || 'Producteur local';
   }
   return groups;
 }
@@ -233,18 +259,23 @@ function siteMarker(group) {
   }).bindPopup(()=>sitePopup(group),{autoPan:false});
   return marker;
 }
-function drawSiteFan(groups) {
+function drawSiteFan(groups,forEdition=false) {
   siteFanMarkers.clearLayers();
   siteConnections.clearLayers();
   // Position réelle de chacun des sites; seules les icônes d'activités sont déployées.
   for (const group of groups) {
-    if (group.categories.length <= 1) {
-      // Une seule catégorie au site : pas d'éventail artificiel.
-      siteFanMarkers.addLayer(siteMarker(group));
+    if ((forEdition ? group.members.length : group.categories.length) <= 1) {
+      const entry=group.members[0];
+      if(forEdition){
+        const m=L.marker(entry.originalLatLng,{icon:iconForFeature(entry.f),autoPan:false,title:group.title});
+        m.on('click',()=>editFeature(entry.f));
+        siteFanMarkers.addLayer(m);
+      } else siteFanMarkers.addLayer(siteMarker(group));
       continue;
     }
     const center = map.latLngToLayerPoint(group.position);
-    const n = group.categories.length;
+    const itemsToRender=forEdition ? group.members.map(x=>({category:x.f.properties.categorie,items:[x]})) : group.categories.map(category=>({category,items:group.members.filter(x=>x.f.properties.categorie===category)}));
+    const n = itemsToRender.length;
     const size = iconSize();
     const radius = Math.max(size * 1.30, (size+14)/(2*Math.sin(Math.PI/n)));
     const marker = L.circleMarker(group.position, {
@@ -258,14 +289,17 @@ function drawSiteFan(groups) {
       autoPan:false,title:group.title
     }).bindPopup(()=>sitePopup(group),{autoPan:false});
     siteFanMarkers.addLayer(centerBadge);
-    group.categories.forEach((category, i) => {
+    itemsToRender.forEach(({category,items}, i) => {
       const angle = -Math.PI/2 + (2*Math.PI*i/n);
       const target = map.layerPointToLatLng(L.point(center.x + radius*Math.cos(angle), center.y + radius*Math.sin(angle)));
       // Garder les fiches distinctes même si plusieurs lignes sources ont la même catégorie.
-      const items = group.members.filter(x=>x.f.properties.categorie===category);
       const feature = items[0].f;
       const marker=L.marker(target, {icon:iconForFeature(feature),title:`${group.title} — ${category}`,autoPan:false})
         .bindPopup(()=>items.map(x=>popup(x.f)).join('<hr class="site-separator">'),{autoPan:false});
+      if(forEdition){
+        marker.off('click');
+        marker.on('click',()=>{marker.closePopup();editFeature(feature);});
+      }
       siteFanMarkers.addLayer(marker);
       // Trait court et discret vers le site, et non vers une position décalée d'un autre producteur.
       L.polyline([group.position,target],{pane:'pointConnections',interactive:false,color:'#9b8780',weight:1,opacity:.34,dashArray:'2 5'})
@@ -282,14 +316,27 @@ function refresh() {
     [f.properties.name,f.properties.Adresse,readableDescription(f.properties.description),f.properties.categorie]
       .some(v=>String(v||'').toLocaleLowerCase('fr').includes(q)));
   selected.forEach(x => x.marker.setLatLng(x.originalLatLng));
+  const groups = getSiteGroups(selected);
   if (editorEnabled) {
-    // En édition, tous les objets sources restent accessibles, sans fusion des fiches.
-    map.addLayer(layer);
-    selected.forEach(x=>layer.addLayer(x.marker));
-    document.getElementById('counter').textContent = `${selected.length} objet(s) source affiché(s) sur ${features.length} (édition)`;
+    // Les clusters classiques cachaient les fiches et empêchaient leur sélection.
+    // Zoom faible : chaque site est cliquable et amène aux fiches individuelles.
+    // Zoom détaillé : chaque OBJET source a son propre pictogramme dans l'éventail.
+    if(map.getZoom()<15){
+      map.addLayer(siteFanMarkers);
+      groups.forEach(g=>{
+        const m=siteMarker(g);
+        m.off('click');
+        m.on('click',()=>{m.closePopup();map.setView(g.position,16);});
+        siteFanMarkers.addLayer(m);
+      });
+    } else {
+      map.addLayer(siteConnections);
+      map.addLayer(siteFanMarkers);
+      drawSiteFan(groups,true);
+    }
+    document.getElementById('counter').textContent = `${groups.length} site(s) • ${selected.length} fiche(s) éditables`;
     return;
   }
-  const groups = getSiteGroups(selected);
   if(map.getZoom() < 15) {
     map.addLayer(layer);
     groups.forEach(g=>layer.addLayer(siteMarker(g)));
