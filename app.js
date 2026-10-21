@@ -171,92 +171,134 @@ function syncFilters() {
     b.setAttribute('aria-pressed', String(on));
   }
 }
-// Déploiement automatique en éventail au zoom détaillé : aucune altération GeoJSON.
-// La distance visuelle est mesurée en pixels, pas en degrés géographiques.
-function fanOut(points) {
-  const pixelPts = points.map(x => ({...x, p: map.latLngToLayerPoint(x.originalLatLng)}));
+// V10 : les objets sources restent indépendants pour l'édition et l'export.
+// La représentation publique est organisée par SITE (nom + adresse cohérente).
+// Les distances sont contrôlées pour ne pas fusionner deux implantations éloignées.
+const siteMarkers = [];
+const siteFanMarkers = L.layerGroup();
+const siteConnections = L.layerGroup();
+const SITE_MAX_DISTANCE_METERS = 130;
+
+function normalizeSiteText(v) {
+  return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[’']/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+function getSiteGroups(entries) {
   const groups = [];
-  const visited = new Set();
-  // Points proches (moins de 42 px) : composantes connexes.
-  for (let i=0; i<pixelPts.length; i++) {
-    if (visited.has(i)) continue;
-    const component=[],queue=[i]; visited.add(i);
-    while (queue.length) {
-      const k=queue.shift();component.push(pixelPts[k]);
-      for(let j=0;j<pixelPts.length;j++) {
-        if(visited.has(j)) continue;
-        if(pixelPts[k].p.distanceTo(pixelPts[j].p) < 42) {
-          visited.add(j);queue.push(j);
-        }
-      }
+  // Un nom seul ne suffit pas à fusionner : il faut une adresse compatible ET une proximité réelle.
+  for (const entry of entries) {
+    const name = normalizeSiteText(entry.f.properties.name);
+    const address = normalizeSiteText(entry.f.properties.Adresse);
+    let group = groups.find(g => name && g.name === name &&
+      ((address && g.address && address === g.address) || (!address && !g.address)) &&
+      g.members.every(x => map.distance(x.originalLatLng, entry.originalLatLng) <= SITE_MAX_DISTANCE_METERS));
+    if (!group) {
+      group = {name, address, members: []};
+      groups.push(group);
     }
-    groups.push(component);
+    group.members.push(entry);
   }
-  const size=iconSize();
-  const placed=[];
-  for(const group of groups) {
-    if(group.length===1) { placed.push({entry:group[0],pt:group[0].p});continue; }
-    // Le centre est la position moyenne des points réels, uniquement pour la répartition.
-    const cx=group.reduce((acc,e)=>acc+e.p.x,0)/group.length;
-    const cy=group.reduce((acc,e)=>acc+e.p.y,0)/group.length;
-    const n=group.length;
-    const angleStep=2*Math.PI/n;
-    const radius=Math.max(size*1.03+8, (size+13)/(2*Math.sin(Math.PI/n)));
-    group.sort((a,b)=>String(a.f.properties.name||'').localeCompare(String(b.f.properties.name||''),'fr'));
-    group.forEach((entry,i)=>{
-      const angle=-Math.PI/2+i*angleStep;
-      placed.push({entry,pt:L.point(cx+radius*Math.cos(angle),cy+radius*Math.sin(angle))});
+  // Position de site : le point source le plus central (médoïde), jamais une coordonnée fictive.
+  for (const group of groups) {
+    const medoid = group.members.slice().sort((a, b) => {
+      const score = e => group.members.reduce((sum, other) => sum + map.distance(e.originalLatLng, other.originalLatLng), 0);
+      return score(a) - score(b);
+    })[0];
+    group.position = medoid.originalLatLng;
+    group.categories = [...new Set(group.members.map(x => x.f.properties.categorie))];
+    group.title = medoid.f.properties.name || 'Producteur local';
+  }
+  return groups;
+}
+function siteIcon(group) {
+  if (group.categories.length === 1) return iconForFeature(group.members[0].f);
+  const size = iconSize();
+  return L.divIcon({
+    className: 'site-multi-marker',
+    html: `<span class="site-multi-dot">${group.categories.length}</span>`,
+    iconSize: [size, size], iconAnchor: [size/2, size/2], popupAnchor:[0,-size/2]
+  });
+}
+function sitePopup(group) {
+  const categoriesHtml = group.categories.map(c => {
+    const category=categories.find(x=>x.key===c);
+    return `<span class="site-category"><img src="${imagePath(iconFor(c))}" alt="">${esc(category?.name||c)}</span>`;
+  }).join('');
+  const address = group.members.find(x=>x.f.properties.Adresse)?.f.properties.Adresse;
+  return `<div class="site-popup"><h3>${esc(group.title)}</h3>${address?`<p>📍 ${esc(address)}</p>`:''}<p><strong>${group.categories.length} production${group.categories.length>1?'s':''}</strong></p><div class="site-categories">${categoriesHtml}</div><p class="site-hint">Zoomez pour consulter chaque production individuellement.</p></div>`;
+}
+function siteMarker(group) {
+  const marker = L.marker(group.position, {
+    icon:siteIcon(group),title:group.title,autoPan:false
+  }).bindPopup(()=>sitePopup(group),{autoPan:false});
+  return marker;
+}
+function drawSiteFan(groups) {
+  siteFanMarkers.clearLayers();
+  siteConnections.clearLayers();
+  // Position réelle de chacun des sites; seules les icônes d'activités sont déployées.
+  for (const group of groups) {
+    if (group.categories.length <= 1) {
+      // Une seule catégorie au site : pas d'éventail artificiel.
+      siteFanMarkers.addLayer(siteMarker(group));
+      continue;
+    }
+    const center = map.latLngToLayerPoint(group.position);
+    const n = group.categories.length;
+    const size = iconSize();
+    const radius = Math.max(size * 1.30, (size+14)/(2*Math.sin(Math.PI/n)));
+    const marker = L.circleMarker(group.position, {
+      radius:5, color:'#a93b30', weight:2, fillColor:'#ffffff',fillOpacity:1,interactive:true,
+      title:group.title
+    }).bindPopup(()=>sitePopup(group),{autoPan:false});
+    siteFanMarkers.addLayer(marker);
+    // L'icône principale représente l'identité du site, pas une activité supplémentaire.
+    const centerBadge=L.marker(group.position,{
+      icon:L.divIcon({className:'site-anchor',html:`<span>${n}</span>`,iconSize:[25,25],iconAnchor:[12.5,12.5]}),
+      autoPan:false,title:group.title
+    }).bindPopup(()=>sitePopup(group),{autoPan:false});
+    siteFanMarkers.addLayer(centerBadge);
+    group.categories.forEach((category, i) => {
+      const angle = -Math.PI/2 + (2*Math.PI*i/n);
+      const target = map.layerPointToLatLng(L.point(center.x + radius*Math.cos(angle), center.y + radius*Math.sin(angle)));
+      // Garder les fiches distinctes même si plusieurs lignes sources ont la même catégorie.
+      const items = group.members.filter(x=>x.f.properties.categorie===category);
+      const feature = items[0].f;
+      const marker=L.marker(target, {icon:iconForFeature(feature),title:`${group.title} — ${category}`,autoPan:false})
+        .bindPopup(()=>items.map(x=>popup(x.f)).join('<hr class="site-separator">'),{autoPan:false});
+      siteFanMarkers.addLayer(marker);
+      // Trait court et discret vers le site, et non vers une position décalée d'un autre producteur.
+      L.polyline([group.position,target],{pane:'pointConnections',interactive:false,color:'#9b8780',weight:1,opacity:.34,dashArray:'2 5'})
+        .addTo(siteConnections);
     });
-  }
-  // Deux éventails proches ne doivent pas se recouvrir : répulsion mesurée en pixels.
-  const minDistance=size+9;
-  for(let k=0;k<90;k++) {
-    let collided=false;
-    for(let i=0;i<placed.length;i++) for(let j=i+1;j<placed.length;j++) {
-      const a=placed[i],b=placed[j];let dx=b.pt.x-a.pt.x,dy=b.pt.y-a.pt.y;
-      let distance=Math.hypot(dx,dy);
-      if(distance>=minDistance)continue;
-      collided=true;
-      if(distance<.01) {dx=1;dy=0;distance=1;}
-      const step=(minDistance-distance)/2+.2;
-      a.pt=L.point(a.pt.x-dx/distance*step,a.pt.y-dy/distance*step);
-      b.pt=L.point(b.pt.x+dx/distance*step,b.pt.y+dy/distance*step);
-    }
-    if(!collided)break;
-  }
-  for(const item of placed) {
-    const {entry,pt}=item;
-    const difference=entry.p.distanceTo(pt);
-    const target=difference>3?map.layerPointToLatLng(pt):entry.originalLatLng;
-    entry.marker.setLatLng(target);
-    individualMarkers.addLayer(entry.marker);
-    if(difference>size*.4) {
-      L.polyline([entry.originalLatLng,target],{
-        pane:'pointConnections',interactive:false,color:'#77716b',
-        weight:1,opacity:.5,dashArray:'3 4'
-      }).addTo(connectionLines);
-      L.circleMarker(entry.originalLatLng,{
-        pane:'pointConnections',interactive:false,radius:3,
-        color:'#8c423a',weight:1.5,fillColor:'#fff',fillOpacity:1
-      }).addTo(connectionLines);
-    }
   }
 }
 function refresh() {
   const q = document.getElementById('search').value.trim().toLocaleLowerCase('fr');
   layer.clearLayers(); individualMarkers.clearLayers(); connectionLines.clearLayers();
-  map.removeLayer(layer);map.removeLayer(individualMarkers);map.removeLayer(connectionLines);
-  const selected = markers.filter(({ f }) => active.has(f.properties.categorie) && [f.properties.name, f.properties.Adresse, f.properties.description, f.properties.categorie].some(v => String(v || '').toLocaleLowerCase('fr').includes(q)));
-  selected.forEach(x=>x.marker.setLatLng(x.originalLatLng));
-  if(map.getZoom()<15 || editorEnabled) {
+  siteFanMarkers.clearLayers(); siteConnections.clearLayers();
+  [layer,individualMarkers,connectionLines,siteFanMarkers,siteConnections].forEach(x=>map.removeLayer(x));
+  const selected = markers.filter(({ f }) => active.has(f.properties.categorie) &&
+    [f.properties.name,f.properties.Adresse,readableDescription(f.properties.description),f.properties.categorie]
+      .some(v=>String(v||'').toLocaleLowerCase('fr').includes(q)));
+  selected.forEach(x => x.marker.setLatLng(x.originalLatLng));
+  if (editorEnabled) {
+    // En édition, tous les objets sources restent accessibles, sans fusion des fiches.
     map.addLayer(layer);
     selected.forEach(x=>layer.addLayer(x.marker));
-  } else {
-    map.addLayer(connectionLines);
-    map.addLayer(individualMarkers);
-    fanOut(selected);
+    document.getElementById('counter').textContent = `${selected.length} objet(s) source affiché(s) sur ${features.length} (édition)`;
+    return;
   }
-  document.getElementById('counter').textContent = `${selected.length} site${selected.length > 1 ? 's' : ''} affiché${selected.length > 1 ? 's' : ''} sur ${features.length}`;
+  const groups = getSiteGroups(selected);
+  if(map.getZoom() < 15) {
+    map.addLayer(layer);
+    groups.forEach(g=>layer.addLayer(siteMarker(g)));
+  } else {
+    map.addLayer(siteConnections);
+    map.addLayer(siteFanMarkers);
+    drawSiteFan(groups);
+  }
+  document.getElementById('counter').textContent = `${groups.length} site${groups.length>1?'s':''} • ${selected.length} production${selected.length>1?'s':''} affichée${selected.length>1?'s':''} sur ${features.length}`;
 }
 
 function reframe() {
