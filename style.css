@@ -129,3 +129,9 @@ h1 em{font-style:normal;color:var(--ccpg-green)}
 .edit-form-actions button:nth-child(2){background:#6a655f}.edit-form-actions button.delete{background:#8c1c1c}
 .edit-panel .is-location-mode{background:#e4f1e9!important}
 @media(max-width:760px){.edit-launch{top:57px;right:10px}.edit-panel{top:110px;max-height:calc(100dvh - 180px)}}
+
+/* V8 : commandes distinctes, impression masquée pendant l’édition */
+.print-entry{top:111px!important;right:14px!important}
+.edit-launch{top:61px!important;right:14px!important}
+#print-workspace [hidden], .print-entry[hidden]{display:none!important}
+@media(max-width:760px){.print-entry{top:105px!important;right:10px!important}.edit-launch{top:57px!important;right:10px!important}}
