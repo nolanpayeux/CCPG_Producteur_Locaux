@@ -112,6 +112,16 @@
       <div class="edit-form-actions"><button type="submit">Enregistrer</button><button type="button" id="edit-cancel">Annuler</button><button class="delete" type="button" id="edit-delete">Supprimer</button></div>
     </form>
   </section>
+  <!-- V11.1 : confirmation de sauvegarde locale, distincte de la publication. -->
+  <div id="edit-saved-modal" class="edit-saved-backdrop" hidden>
+    <section class="edit-saved-dialog" role="dialog" aria-modal="true" aria-labelledby="edit-saved-title" aria-describedby="edit-saved-desc" tabindex="-1">
+      <div class="edit-saved-symbol" aria-hidden="true">✓</div>
+      <h2 id="edit-saved-title">Modification enregistrée localement</h2>
+      <p id="edit-saved-desc">Votre modification est visible uniquement dans cette session. <strong>Elle n’est pas publiée sur le site.</strong></p>
+      <p>Seul l’administrateur peut valider les modifications et les mettre en ligne après export du GeoJSON et mise à jour sur GitHub.</p>
+      <button id="edit-saved-ok" type="button">J’ai compris</button>
+    </section>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
