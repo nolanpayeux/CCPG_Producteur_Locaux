@@ -148,3 +148,5 @@ h1 em{font-style:normal;color:var(--ccpg-green)}
 .site-category img{height:24px;width:24px;object-fit:contain}
 .site-hint{color:#82746d;font-style:italic}
 .site-separator{border:0;border-top:1px solid #eadcda;margin:12px 0}
+
+.popup-link-detail{font-size:11px;color:#7c706a;display:inline-block;margin-left:5px;overflow-wrap:anywhere}
