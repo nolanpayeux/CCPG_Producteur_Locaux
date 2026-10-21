@@ -44,6 +44,7 @@ let originalGeoJson = null;
 let editorEnabled = false;
 let selectedFeature = null;
 let locatingFeature = false;
+let dragPreview = null;
 const undoStack = [];
 let active = new Set(categories.map(c => c.key));
 let boundsAll = null;
@@ -80,8 +81,8 @@ const layer = L.markerClusterGroup({
   showCoverageOnHover: false,
   spiderfyOnMaxZoom: true,
   zoomToBoundsOnClick: true,
-  maxClusterRadius: 52,
-  disableClusteringAtZoom: 15,
+  maxClusterRadius: zoom => zoom >= 15 ? 37 : 52,
+  disableClusteringAtZoom: 21,
   iconCreateFunction(c) {
     const n = c.getChildCount();
     const size = n < 10 ? 40 : n < 30 ? 48 : 56;
@@ -122,11 +123,26 @@ function validUrl(v) {
   if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
   try { const u = new URL(s); return ['https:', 'http:'].includes(u.protocol) ? u.href : null; } catch { return null; }
 }
+// Nettoie uniquement la représentation HTML : le GeoJSON source reste intact.
+function readableDescription(raw) {
+  return String(raw ?? '')
+    // Images et pièces jointes intégrées par uMap (souvent des JPEG Base64 géants).
+    .replace(/\{\{\s*data:image\/[^\n]*?(?:\}\}|$)/gi, '')
+    .replace(/data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+/gi, '')
+    // Balises image uMap, avec URL distante et dimension optionnelle.
+    .replace(/\{\{\s*https?:\/\/[^}]+\}\}/gi, '')
+    .replace(/\{\{[^}]*\}\}/g, '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+}
 function popup(f) {
   const p = f.properties;
   const cat = categories.find(c => c.key === p.categorie);
   const site = validUrl(p.liens);
-  const desc = esc(p.description).replace(/\n/g, '<br>');
+  const desc = esc(readableDescription(p.description)).replace(/\n/g, '<br>');
   return `<div class="popup-head"><img src="${imagePath(p.icone || iconFor(p.categorie))}" alt=""><div><h3>${esc(p.name || 'Producteur local')}</h3><small>${esc(cat?.name || p.categorie || 'Production locale')}</small></div></div><div class="popup-section">${p.Adresse ? `<p>📍 ${esc(p.Adresse)}</p>` : ''}${p.tel ? `<p>☎ ${esc(p.tel)}</p>` : ''}${desc ? `<p>${desc}</p>` : ''}${site ? `<p><a href="${esc(site)}" target="_blank" rel="noopener noreferrer">Visiter le site ↗</a></p>` : ''}</div>`;
 }
 function initFilters() {
@@ -160,52 +176,15 @@ function refresh() {
   layer.clearLayers();
   individualMarkers.clearLayers();
   connectionLines.clearLayers();
+  map.removeLayer(individualMarkers); map.removeLayer(connectionLines);
+  if (!map.hasLayer(layer)) map.addLayer(layer);
   const selected = markers.filter(({ f }) => active.has(f.properties.categorie) && [f.properties.name, f.properties.Adresse, f.properties.description, f.properties.categorie].some(v => String(v || '').toLocaleLowerCase('fr').includes(q)));
-  if (map.getZoom() < 15) {
-    map.removeLayer(individualMarkers);
-    map.removeLayer(connectionLines);
-    if (!map.hasLayer(layer)) map.addLayer(layer);
-    selected.forEach(x => { x.marker.setLatLng(x.originalLatLng); layer.addLayer(x.marker); });
-  } else {
-    map.removeLayer(layer);
-    map.addLayer(connectionLines);
-    map.addLayer(individualMarkers);
-    // Position calculée en pixels à partir de la vraie coordonnée, sans modifier le GeoJSON.
-    // Ce calcul évite les sauts lors des clics et permet des marqueurs distincts.
-    const buckets = new Map();
-    selected.forEach(x => {
-      const key = x.originalLatLng.lat.toFixed(7) + ',' + x.originalLatLng.lng.toFixed(7);
-      if (!buckets.has(key)) buckets.set(key, []);
-      buckets.get(key).push(x);
-    });
-    for (const group of buckets.values()) {
-      const n = group.length;
-      const center = map.latLngToLayerPoint(group[0].originalLatLng);
-      group.forEach((x, i) => {
-        if (n === 1) { x.marker.setLatLng(x.originalLatLng); }
-        else {
-          const radius = Math.max(28, iconSize() * 0.85, n * 6);
-          const angle = -Math.PI / 2 + 2 * Math.PI * i / n;
-          const point = L.point(center.x + radius * Math.cos(angle), center.y + radius * Math.sin(angle));
-          const displayPosition = map.layerPointToLatLng(point);
-          x.marker.setLatLng(displayPosition);
-          L.polyline([x.originalLatLng, displayPosition], {
-            pane: 'pointConnections', interactive: false,
-            color: '#9c2f27', opacity: 0.75, weight: 1.4
-          }).addTo(connectionLines);
-        }
-        individualMarkers.addLayer(x.marker);
-      });
-    }
-  }
-  document.getElementById('counter').textContent = selected.length + ' site' + (selected.length > 1 ? 's' : '') + ' affiché' + (selected.length > 1 ? 's' : '') + ' sur ' + features.length;
-  if (!editorEnabled && q && selected.length === 1) {
-    map.setView(selected[0].marker.getLatLng(), 15);
-    selected[0].marker.openPopup();
-  }
+  selected.forEach(x => { x.marker.setLatLng(x.originalLatLng); layer.addLayer(x.marker); });
+  document.getElementById('counter').textContent = `${selected.length} site${selected.length > 1 ? 's' : ''} affiché${selected.length > 1 ? 's' : ''} sur ${features.length}`;
 }
+
 function reframe() {
-  const group = map.getZoom() >= 15 ? L.latLngBounds(markers.filter(x => individualMarkers.hasLayer(x.marker)).map(x => x.originalLatLng)) : layer.getBounds();
+  const group = layer.getBounds();
   if (group.isValid()) {
     map.fitBounds(group.pad(.15), { maxZoom: 13 });
   } else if (territoryBounds) {
@@ -338,6 +317,7 @@ async function load() {
   }
 }
 
+
 map.on('zoomend', () => {
   for (const x of markers) x.marker.setIcon(iconForFeature(x.f));
   refresh();
@@ -377,6 +357,7 @@ const mapElement = document.getElementById('map');
 let printMode = false;
 function updatePrintMap(){ map.invalidateSize({animate:false}); }
 function openPrintMode(){
+  if (editorEnabled) setEditor(false);
   if(printMode)return;
   printMode=true;
   document.getElementById('print-date').textContent=new Date().toLocaleDateString('fr-FR');
@@ -420,17 +401,21 @@ const editCategory = document.getElementById('edit-category');
 for (const c of categories) editCategory.add(new Option(c.name, c.key));
 function setStatus(text) { editStatus.textContent = text; }
 function setEditor(isOn) {
+  if (isOn && printMode) closePrintMode();
+  clearDragPreview();
   editorEnabled = isOn;
   editPanel.hidden = !isOn;
   editLaunch.classList.toggle('active', isOn);
   editLaunch.textContent = isOn ? '✕ Quitter édition' : '✎ Mode édition';
   if (!isOn) { locatingFeature = false; editForm.hidden = true; selectedFeature = null; }
+  document.getElementById('open-print').hidden = isOn;
   setStatus(isOn ? 'Cliquez sur un producteur pour modifier sa fiche, ou ajoutez un point.' : '');
 }
 editLaunch.onclick = () => setEditor(!editorEnabled);
 document.getElementById('edit-close').onclick = () => setEditor(false);
 function editFeature(f) {
   if (!editorEnabled) return;
+  clearDragPreview();
   selectedFeature = f;
   editForm.hidden = false;
   locatingFeature = false;
@@ -460,8 +445,29 @@ document.getElementById('edit-add').onclick = () => {
   editFeature({type:'Feature',geometry:{type:'Point',coordinates:[center.lng,center.lat]},properties:{ name:'',categorie:categories[0].key, description:'', Adresse:'',tel:'',liens:'',icone:categories[0].icon }});
   setStatus('Nouveau producteur : complétez le formulaire puis sélectionnez son emplacement.');
 };
-document.getElementById('edit-cancel').onclick = () => { editForm.hidden=true; selectedFeature=null; locatingFeature=false; setStatus('Édition annulée.'); };
-document.getElementById('edit-locate').onclick = () => { locatingFeature=true; setStatus('Cliquez sur la carte à l’emplacement réel du producteur.'); };
+document.getElementById('edit-cancel').onclick = () => { clearDragPreview(); editForm.hidden=true; selectedFeature=null; locatingFeature=false; setStatus('Édition annulée.'); };
+function clearDragPreview() {
+  if (dragPreview) { map.removeLayer(dragPreview); dragPreview = null; }
+  locatingFeature = false;
+}
+document.getElementById('edit-locate').textContent = '↔ Déplacer le marqueur';
+document.getElementById('edit-locate').onclick = () => {
+  if (!selectedFeature) return;
+  clearDragPreview();
+  const lat = Number(editForm.elements.namedItem('lat').value);
+  const lon = Number(editForm.elements.namedItem('lon').value);
+  dragPreview = L.marker([lat, lon], {
+    draggable: true, autoPan: true, zIndexOffset: 2000,
+    icon: iconForFeature(selectedFeature)
+  }).addTo(map);
+  dragPreview.on('drag', e => {
+    const v = e.target.getLatLng();
+    editForm.elements.namedItem('lat').value = v.lat.toFixed(7);
+    editForm.elements.namedItem('lon').value = v.lng.toFixed(7);
+  });
+  map.setView([lat, lon], Math.max(map.getZoom(), 16));
+  setStatus('Glissez le marqueur sur la carte ; sa position est visible immédiatement. Cliquez sur Enregistrer pour valider.');
+};
 map.on('click', e => {
   if (!editorEnabled || !locatingFeature || !selectedFeature) return;
   editForm.elements.namedItem('lat').value = e.latlng.lat.toFixed(7);
@@ -481,18 +487,18 @@ editForm.addEventListener('submit', e => {
   p.icone=iconFor(p.categorie);
   selectedFeature.geometry.coordinates=[lon,lat];
   if (!features.includes(selectedFeature)) features.push(selectedFeature);
-  refreshEditionData();editForm.hidden=true;selectedFeature=null;locatingFeature=false;
+  clearDragPreview();refreshEditionData();editForm.hidden=true;selectedFeature=null;
   setStatus('Modifications enregistrées dans cette session. Exportez le GeoJSON pour les conserver.');
 });
 document.getElementById('edit-delete').onclick = () => {
   if (!selectedFeature || !features.includes(selectedFeature)) return;
   if (!window.confirm('Supprimer ce producteur de la version de travail ?')) return;
   snapshot();features=features.filter(f=>f!==selectedFeature);
-  selectedFeature=null;editForm.hidden=true;refreshEditionData();setStatus('Producteur supprimé de la session. Export nécessaire.');
+  clearDragPreview();selectedFeature=null;editForm.hidden=true;refreshEditionData();setStatus('Producteur supprimé de la session. Export nécessaire.');
 };
 document.getElementById('edit-undo').onclick=()=>{
   if(!undoStack.length){setStatus('Aucune modification à annuler.');return;}
-  features=undoStack.pop();selectedFeature=null;editForm.hidden=true;refreshEditionData();setStatus('Dernière modification annulée.');
+  clearDragPreview();features=undoStack.pop();selectedFeature=null;editForm.hidden=true;refreshEditionData();setStatus('Dernière modification annulée.');
 };
 document.getElementById('edit-export').onclick=()=>{
   const exportData={...(originalGeoJson||{type:'FeatureCollection'}),type:'FeatureCollection',features:features.map(f=>{
