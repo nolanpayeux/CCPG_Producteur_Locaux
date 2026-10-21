@@ -221,17 +221,24 @@ function normalizeSiteText(v) {
   return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase().replace(/[’']/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
 }
+function siteId(f) { return String(f.properties.site_id || '').trim(); }
+function groupCenter(g) {
+  const p=g.members.find(x=>Number.isFinite(Number(x.f.properties.site_lat)) && Number.isFinite(Number(x.f.properties.site_lon)) && x.f.properties.site_lat !== undefined && x.f.properties.site_lon !== undefined);
+  return p ? L.latLng(Number(p.f.properties.site_lat),Number(p.f.properties.site_lon)) : null;
+}
+function allSiteGroups() { return getSiteGroups(markers); }
 function getSiteGroups(entries) {
   const groups = [];
   // Un nom seul ne suffit pas à fusionner : il faut une adresse compatible ET une proximité réelle.
   for (const entry of entries) {
     const name = canonicalSiteName(entry);
     const address = siteAddressKey(entry);
-    let group = groups.find(g => name && g.name === name &&
+    const explicitId=siteId(entry.f);
+    let group = explicitId ? groups.find(g=>g.id===explicitId) : groups.find(g => !g.id && name && g.name === name &&
       ((address && g.address && address === g.address) || (!address && !g.address)) &&
       g.members.every(x => map.distance(x.originalLatLng, entry.originalLatLng) <= SITE_MAX_DISTANCE_METERS));
     if (!group) {
-      group = {name, address, members: []};
+      group = {id:explicitId||'',name, address, members: []};
       groups.push(group);
     }
     group.members.push(entry);
@@ -242,9 +249,10 @@ function getSiteGroups(entries) {
       const score = e => group.members.reduce((sum, other) => sum + map.distance(e.originalLatLng, other.originalLatLng), 0);
       return score(a) - score(b);
     })[0];
-    group.position = medoid.originalLatLng;
+    group.position = groupCenter(group) || medoid.originalLatLng;
+    if (group.id) group.name=normalizeSiteText(group.members[0].f.properties.site_nom || group.members[0].f.properties.name);
     group.categories = [...new Set(group.members.map(x => x.f.properties.categorie))];
-    group.title = group.members.find(x=>normalizeSiteText(x.f.properties.name)===group.name)?.f.properties.name || medoid.f.properties.name || 'Producteur local';
+    group.title = (group.id ? group.members.find(x=>x.f.properties.site_nom)?.f.properties.site_nom : '') || group.members.find(x=>normalizeSiteText(x.f.properties.name)===group.name)?.f.properties.name || medoid.f.properties.name || 'Producteur local';
   }
   return groups;
 }
@@ -586,8 +594,8 @@ function setEditor(isOn) {
   editLaunch.textContent = isOn ? '✕ Quitter édition' : '✎ Mode édition';
   if (!isOn) { locatingFeature = false; editForm.hidden = true; selectedFeature = null; }
   document.getElementById('open-print').hidden = isOn;
-  setStatus(isOn ? 'Cliquez sur un producteur pour modifier sa fiche, ou ajoutez un point.' : '');
-  refresh();
+  setStatus(isOn ? 'Cliquez sur un producteur pour modifier sa fiche, ou gérez les groupes.' : '');
+  refresh(); refreshGroupControls();
 }
 editLaunch.onclick = () => setEditor(!editorEnabled);
 document.getElementById('edit-close').onclick = () => setEditor(false);
@@ -601,6 +609,8 @@ function editFeature(f) {
   editForm.elements.namedItem('lat').value = f.geometry.coordinates[1];
   editForm.elements.namedItem('lon').value = f.geometry.coordinates[0];
   document.getElementById('edit-delete').hidden = !features.includes(f);
+  refreshGroupControls();
+  document.getElementById('edit-site').value=siteId(f);
   setStatus('Modification du producteur « ' + (f.properties.name || 'Sans nom') + ' ».');
 }
 function snapshot() { undoStack.push(structuredClone(features)); if (undoStack.length > 30) undoStack.shift(); }
@@ -616,7 +626,7 @@ function refreshEditionData() {
     markers.push({f,marker,originalLatLng});
   }
   boundsAll = markers.length ? L.latLngBounds(markers.map(m=>m.originalLatLng)) : null;
-  initFilters(); syncFilters(); refresh();
+  initFilters(); syncFilters(); refresh(); refreshGroupControls();
 }
 document.getElementById('edit-add').onclick = () => {
   const center = map.getCenter();
@@ -663,6 +673,16 @@ editForm.addEventListener('submit', e => {
   const p=selectedFeature.properties;
   for (const name of fieldsToEdit) p[name]=editForm.elements.namedItem(name).value.trim();
   p.icone=iconFor(p.categorie);
+  const requestedSite=document.getElementById('edit-site').value;
+  if(requestedSite) {
+    const target=allSiteGroups().find(g=>g.id===requestedSite);
+    if(target){p.site_id=target.id;p.site_nom=target.title;p.site_lat=target.position.lat;p.site_lon=target.position.lng;}
+    else if(pendingGroup && pendingGroup.id===requestedSite){p.site_id=pendingGroup.id;p.site_nom=pendingGroup.name;p.site_lat=pendingGroup.position.lat;p.site_lon=pendingGroup.position.lng;}
+  } else {
+    // Une fiche détachée doit rester indépendante même si son nom/adresse correspondent à un groupe automatique.
+    if (siteId(selectedFeature)) {p.site_id=nextSiteId();p.site_nom=p.name;p.site_lat=lat;p.site_lon=lon;}
+    else {delete p.site_id;delete p.site_nom;delete p.site_lat;delete p.site_lon;}
+  }
   selectedFeature.geometry.coordinates=[lon,lat];
   if (!features.includes(selectedFeature)) features.push(selectedFeature);
   clearDragPreview();refreshEditionData();editForm.hidden=true;selectedFeature=null;
@@ -689,4 +709,92 @@ document.getElementById('edit-export').onclick=()=>{
   const link=document.createElement('a');link.href=url;link.download='producteurs_CCPG_modifies.geojson';document.body.append(link);link.click();link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   setStatus('Fichier téléchargé. Remplacez data/producteurs.geojson sur GitHub après vérification.');
+};
+
+
+// V11 — Gestion de groupes durable, stockée sur chaque fiche du GeoJSON.
+// Les groupes historiques sont affichés sans modifier les données tant qu'une action ne les convertit pas.
+let currentGroupId='';
+function nextSiteId() {
+  let id;
+  do { id='site_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7); }
+  while(features.some(f=>siteId(f)===id));
+  return id;
+}
+function groupKey(g) { return g.id || ('legacy:'+allSiteGroups().indexOf(g)); }
+function refreshGroupControls() {
+  const groups=allSiteGroups();
+  const select=document.getElementById('group-select');
+  const assign=document.getElementById('edit-site');
+  const previous=select.value;
+  select.replaceChildren(new Option('— Choisir un groupe —',''));
+  assign.replaceChildren(new Option('Aucun rattachement explicite',''));
+  groups.forEach((g,i)=>{
+    // Les groupes automatiques peuvent être convertis par le panneau de gestion.
+    select.add(new Option(`${g.title} (${g.members.length} fiche${g.members.length>1?'s':''})${g.id?'':' · auto'}`,g.id || 'legacy:'+i));
+    if(g.id) assign.add(new Option(g.title,g.id));
+  });
+  if([...select.options].some(x=>x.value===previous))select.value=previous;
+  else select.value='';
+  currentGroupId=select.value;
+  const g=resolveSelectedGroup();
+  document.getElementById('group-details').hidden=!g;
+  if(g){
+    document.getElementById('group-name').value=g.title;
+    document.getElementById('group-lat').value=g.position.lat.toFixed(7);
+    document.getElementById('group-lon').value=g.position.lng.toFixed(7);
+    document.getElementById('group-members').textContent=g.members.map(m=>m.f.properties.name+' — '+m.f.properties.categorie).join(' · ');
+  }
+}
+function resolveSelectedGroup() {
+  const val=document.getElementById('group-select').value;
+  const gs=allSiteGroups();
+  if(val.startsWith('legacy:'))return gs[Number(val.split(':')[1])]||null;
+  return gs.find(g=>g.id===val)||null;
+}
+function updateGroup(g, name, position){
+  const id=g.id||nextSiteId();
+  for(const x of g.members){
+    const p=x.f.properties;
+    p.site_id=id;p.site_nom=name;p.site_lat=position.lat;p.site_lon=position.lng;
+  }
+  return id;
+}
+document.getElementById('group-select').addEventListener('change',()=>refreshGroupControls());
+document.getElementById('group-new').onclick=()=>{
+  const name=window.prompt('Nom du nouveau groupe / site :');
+  if(!name || !name.trim())return;
+  // Le GeoJSON n'enregistre que des fiches. Le groupe est créé dès qu'une fiche lui est associée.
+  const id=nextSiteId();
+  const pos=map.getCenter();
+  const f={type:'Feature',geometry:{type:'Point',coordinates:[pos.lng,pos.lat]},properties:{name:name.trim(),categorie:categories[0].key,description:'',Adresse:'',tel:'',liens:'',icone:categories[0].icon,site_id:id,site_nom:name.trim(),site_lat:pos.lat,site_lon:pos.lng}};
+  editFeature(f);
+  // L'option temporaire permet d'enregistrer la toute première production d'un nouveau groupe.
+  const assign=document.getElementById('edit-site');assign.add(new Option(name.trim(),id));assign.value=id;
+  pendingGroup={id,name:name.trim(),position:pos};
+  setStatus('Nouveau groupe « '+name.trim()+' » : créez sa première production et cliquez sur Enregistrer.');
+};
+let pendingGroup=null;
+// Le formulaire d'édition conserve les groupes fraîchement créés avant leur premier enregistrement.
+const baseEditSubmit=editForm;
+baseEditSubmit.addEventListener('submit',()=>{ pendingGroup=null; });
+document.getElementById('group-save').onclick=()=>{
+  const g=resolveSelectedGroup();if(!g)return;
+  const name=document.getElementById('group-name').value.trim();
+  const lat=Number(document.getElementById('group-lat').value),lon=Number(document.getElementById('group-lon').value);
+  if(!name||!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){setStatus('Nom ou coordonnées du groupe invalides.');return;}
+  snapshot();const id=updateGroup(g,name,L.latLng(lat,lon));
+  refreshEditionData();document.getElementById('group-select').value=id;refreshGroupControls();
+  setStatus('Groupe enregistré. Exportez le GeoJSON pour conserver les modifications.');
+};
+document.getElementById('group-dissolve').onclick=()=>{
+  const g=resolveSelectedGroup();if(!g)return;
+  if(!confirm('Dissoudre « '+g.title+' » ? Les fiches seront conservées.'))return;
+  snapshot();
+  for(const x of g.members){
+    const p=x.f.properties;delete p.site_id;delete p.site_nom;delete p.site_lat;delete p.site_lon;
+  }
+  // Empêche la reconstitution automatique du groupe historique via un identifiant explicite unique par fiche.
+  for(const x of g.members){ const p=x.f.properties; p.site_id=nextSiteId();p.site_nom=p.name; p.site_lat=x.f.geometry.coordinates[1];p.site_lon=x.f.geometry.coordinates[0]; }
+  refreshEditionData();setStatus('Groupe dissous : chaque fiche forme désormais son propre site. Exportez le GeoJSON.');
 };
