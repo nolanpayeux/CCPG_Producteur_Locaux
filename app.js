@@ -171,21 +171,97 @@ function syncFilters() {
     b.setAttribute('aria-pressed', String(on));
   }
 }
+// Déploiement automatique en éventail au zoom détaillé : aucune altération GeoJSON.
+// La distance visuelle est mesurée en pixels, pas en degrés géographiques.
+function fanOut(points) {
+  const pixelPts = points.map(x => ({...x, p: map.latLngToLayerPoint(x.originalLatLng)}));
+  const groups = [];
+  const visited = new Set();
+  // Points proches (moins de 42 px) : composantes connexes.
+  for (let i=0; i<pixelPts.length; i++) {
+    if (visited.has(i)) continue;
+    const component=[],queue=[i]; visited.add(i);
+    while (queue.length) {
+      const k=queue.shift();component.push(pixelPts[k]);
+      for(let j=0;j<pixelPts.length;j++) {
+        if(visited.has(j)) continue;
+        if(pixelPts[k].p.distanceTo(pixelPts[j].p) < 42) {
+          visited.add(j);queue.push(j);
+        }
+      }
+    }
+    groups.push(component);
+  }
+  const size=iconSize();
+  const placed=[];
+  for(const group of groups) {
+    if(group.length===1) { placed.push({entry:group[0],pt:group[0].p});continue; }
+    // Le centre est la position moyenne des points réels, uniquement pour la répartition.
+    const cx=group.reduce((acc,e)=>acc+e.p.x,0)/group.length;
+    const cy=group.reduce((acc,e)=>acc+e.p.y,0)/group.length;
+    const n=group.length;
+    const angleStep=2*Math.PI/n;
+    const radius=Math.max(size*1.03+8, (size+13)/(2*Math.sin(Math.PI/n)));
+    group.sort((a,b)=>String(a.f.properties.name||'').localeCompare(String(b.f.properties.name||''),'fr'));
+    group.forEach((entry,i)=>{
+      const angle=-Math.PI/2+i*angleStep;
+      placed.push({entry,pt:L.point(cx+radius*Math.cos(angle),cy+radius*Math.sin(angle))});
+    });
+  }
+  // Deux éventails proches ne doivent pas se recouvrir : répulsion mesurée en pixels.
+  const minDistance=size+9;
+  for(let k=0;k<90;k++) {
+    let collided=false;
+    for(let i=0;i<placed.length;i++) for(let j=i+1;j<placed.length;j++) {
+      const a=placed[i],b=placed[j];let dx=b.pt.x-a.pt.x,dy=b.pt.y-a.pt.y;
+      let distance=Math.hypot(dx,dy);
+      if(distance>=minDistance)continue;
+      collided=true;
+      if(distance<.01) {dx=1;dy=0;distance=1;}
+      const step=(minDistance-distance)/2+.2;
+      a.pt=L.point(a.pt.x-dx/distance*step,a.pt.y-dy/distance*step);
+      b.pt=L.point(b.pt.x+dx/distance*step,b.pt.y+dy/distance*step);
+    }
+    if(!collided)break;
+  }
+  for(const item of placed) {
+    const {entry,pt}=item;
+    const difference=entry.p.distanceTo(pt);
+    const target=difference>3?map.layerPointToLatLng(pt):entry.originalLatLng;
+    entry.marker.setLatLng(target);
+    individualMarkers.addLayer(entry.marker);
+    if(difference>size*.4) {
+      L.polyline([entry.originalLatLng,target],{
+        pane:'pointConnections',interactive:false,color:'#77716b',
+        weight:1,opacity:.5,dashArray:'3 4'
+      }).addTo(connectionLines);
+      L.circleMarker(entry.originalLatLng,{
+        pane:'pointConnections',interactive:false,radius:3,
+        color:'#8c423a',weight:1.5,fillColor:'#fff',fillOpacity:1
+      }).addTo(connectionLines);
+    }
+  }
+}
 function refresh() {
   const q = document.getElementById('search').value.trim().toLocaleLowerCase('fr');
-  layer.clearLayers();
-  individualMarkers.clearLayers();
-  connectionLines.clearLayers();
-  map.removeLayer(individualMarkers); map.removeLayer(connectionLines);
-  if (!map.hasLayer(layer)) map.addLayer(layer);
+  layer.clearLayers(); individualMarkers.clearLayers(); connectionLines.clearLayers();
+  map.removeLayer(layer);map.removeLayer(individualMarkers);map.removeLayer(connectionLines);
   const selected = markers.filter(({ f }) => active.has(f.properties.categorie) && [f.properties.name, f.properties.Adresse, f.properties.description, f.properties.categorie].some(v => String(v || '').toLocaleLowerCase('fr').includes(q)));
-  selected.forEach(x => { x.marker.setLatLng(x.originalLatLng); layer.addLayer(x.marker); });
+  selected.forEach(x=>x.marker.setLatLng(x.originalLatLng));
+  if(map.getZoom()<15 || editorEnabled) {
+    map.addLayer(layer);
+    selected.forEach(x=>layer.addLayer(x.marker));
+  } else {
+    map.addLayer(connectionLines);
+    map.addLayer(individualMarkers);
+    fanOut(selected);
+  }
   document.getElementById('counter').textContent = `${selected.length} site${selected.length > 1 ? 's' : ''} affiché${selected.length > 1 ? 's' : ''} sur ${features.length}`;
 }
 
 function reframe() {
   const group = layer.getBounds();
-  if (group.isValid()) {
+  if (group.isValid() && map.getZoom() < 15) {
     map.fitBounds(group.pad(.15), { maxZoom: 13 });
   } else if (territoryBounds) {
     map.fitBounds(territoryBounds.pad(.03), { maxZoom: 12 });
@@ -410,6 +486,7 @@ function setEditor(isOn) {
   if (!isOn) { locatingFeature = false; editForm.hidden = true; selectedFeature = null; }
   document.getElementById('open-print').hidden = isOn;
   setStatus(isOn ? 'Cliquez sur un producteur pour modifier sa fiche, ou ajoutez un point.' : '');
+  refresh();
 }
 editLaunch.onclick = () => setEditor(!editorEnabled);
 document.getElementById('edit-close').onclick = () => setEditor(false);
