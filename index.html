@@ -80,13 +80,26 @@
     <p class="edit-warning">Mode de travail local : rien n'est sauvegardé sur GitHub avant export et publication.</p>
     <div class="edit-actions">
       <button type="button" id="edit-add">+ Ajouter un point</button>
+      <button type="button" id="group-new">+ Créer un groupe</button>
       <button type="button" id="edit-undo">↶ Annuler</button>
       <button type="button" id="edit-export">⬇ Exporter GeoJSON</button>
     </div>
     <p id="edit-status" role="status">Cliquez sur un producteur pour le modifier, ou ajoutez un nouveau point.</p>
+    <div class="group-editor">
+      <label for="group-select">Gestion des groupes</label>
+      <select id="group-select"><option value="">— Choisir un groupe —</option></select>
+      <div id="group-details" hidden>
+        <label>Nom du groupe<input id="group-name" maxlength="250"></label>
+        <div class="edit-coords"><label>Latitude centrale<input id="group-lat" type="number" step="any"></label><label>Longitude centrale<input id="group-lon" type="number" step="any"></label></div>
+        <p class="group-members" id="group-members"></p>
+        <div class="edit-actions"><button type="button" id="group-save">Enregistrer le groupe</button><button type="button" id="group-dissolve">Dissoudre le groupe</button></div>
+      </div>
+      <p class="group-help">Pour ajouter une fiche à un groupe, ouvrez sa fiche dans le mode édition et choisissez son rattachement ci-dessous. Les groupes « auto » deviennent permanents au premier enregistrement.</p>
+    </div>
     <form id="edit-form" hidden>
       <label>Nom du producteur *<input name="name" required maxlength="250"></label>
       <label>Catégorie *<select name="categorie" required id="edit-category"></select></label>
+      <label>Appartenance au groupe<select id="edit-site"><option value="">Aucun rattachement explicite</option></select></label>
       <label>Adresse<input name="Adresse" maxlength="400"></label>
       <label>Téléphone<input name="tel" maxlength="100"></label>
       <label>Site internet / contact<input name="liens" maxlength="500"></label>
