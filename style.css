@@ -191,3 +191,23 @@ h1 em{font-style:normal;color:var(--ccpg-green)}
 /* V11.2 : échelle visible dans l'aperçu PDF */
 .leaflet-control-scale{margin-bottom:12px!important;margin-left:12px!important}
 .leaflet-control-scale-line{border-color:#8c7e78!important;background:rgba(255,250,248,.92)!important;color:#5e4e49!important}
+
+/* V11.3 — Légende compacte, uniquement dans la préparation et l'impression PDF */
+.print-sheet.landscape .print-body{grid-template-columns:minmax(0,1fr) 165px;gap:10px}
+.print-sheet.portrait .print-body{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
+.print-sheet .print-sidepanel{gap:0;min-height:0}
+.print-sheet .print-legend{padding:8px 9px;border-radius:8px}
+.print-sheet .print-legend h3{font-size:12px;margin:0 0 3px}
+.print-sheet .print-legend-note{font-size:9px;line-height:1.25}
+.print-sheet .print-legend-list{gap:3px;margin-top:6px}
+.print-sheet .print-legend-item{gap:5px}
+.print-sheet .print-legend-item img{width:19px;height:19px}
+.print-sheet .print-legend-item span{font-size:9px;line-height:1.2}
+.print-sheet .print-legend-item small{font-size:9px}
+.print-sheet.portrait .print-legend-list{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:7px}
+@media print{
+ .print-sheet.landscape .print-body{grid-template-columns:minmax(0,1fr) 36mm!important;gap:2.5mm!important}
+ .print-sheet.portrait .print-body{grid-template-columns:1fr!important;grid-template-rows:minmax(0,1fr) auto!important}
+ .print-sheet .print-legend{padding:1.8mm!important}
+ .print-sheet .print-legend-item img{width:5mm!important;height:5mm!important}
+}
