@@ -13,6 +13,7 @@ const categories = [
 
 const map = L.map('map', { zoomControl: false, scrollWheelZoom: true, preferCanvas: true }).setView([43.90, 4.58], 12);
 L.control.zoom({ position: 'topleft' }).addTo(map);
+L.control.scale({ position: 'bottomleft', imperial: false, maxWidth: 120 }).addTo(map);
 
 map.createPane('territoryMaskPane');
 map.getPane('territoryMaskPane').style.zIndex = 240;
@@ -183,6 +184,29 @@ function syncFilters() {
     b.setAttribute('aria-pressed', String(on));
   }
 }
+
+function searchMatchesFeature(f, q) {
+  return [f.properties.name, f.properties.Adresse, readableDescription(f.properties.description), f.properties.categorie]
+    .some(v => String(v || '').toLocaleLowerCase('fr').includes(q));
+}
+function getFilteredEntries() {
+  const q = document.getElementById('search').value.trim().toLocaleLowerCase('fr');
+  return markers.filter(({ f }) => active.has(f.properties.categorie) && searchMatchesFeature(f, q));
+}
+function getLegendData(entries, bounds = null) {
+  const visible = bounds ? entries.filter(entry => bounds.contains(entry.originalLatLng)) : entries;
+  const counts = new Map();
+  for (const entry of visible) {
+    const key = entry.f.properties.categorie;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return categories
+    .map(category => ({
+      category,
+      count: counts.get(category.key) || 0
+    }))
+    .filter(item => item.count > 0);
+}
 // V10 : les objets sources restent indépendants pour l'édition et l'export.
 // La représentation publique est organisée par SITE (nom + adresse cohérente).
 // Les distances sont contrôlées pour ne pas fusionner deux implantations éloignées.
@@ -328,13 +352,10 @@ function drawSiteFan(groups,forEdition=false) {
   }
 }
 function refresh() {
-  const q = document.getElementById('search').value.trim().toLocaleLowerCase('fr');
   layer.clearLayers(); individualMarkers.clearLayers(); connectionLines.clearLayers();
   siteFanMarkers.clearLayers(); siteConnections.clearLayers();
   [layer,individualMarkers,connectionLines,siteFanMarkers,siteConnections].forEach(x=>map.removeLayer(x));
-  const selected = markers.filter(({ f }) => active.has(f.properties.categorie) &&
-    [f.properties.name,f.properties.Adresse,readableDescription(f.properties.description),f.properties.categorie]
-      .some(v=>String(v||'').toLocaleLowerCase('fr').includes(q)));
+  const selected = getFilteredEntries();
   selected.forEach(x => x.marker.setLatLng(x.originalLatLng));
   const groups = getSiteGroups(selected);
   if (editorEnabled) {
@@ -355,6 +376,7 @@ function refresh() {
       drawSiteFan(groups,true);
     }
     document.getElementById('counter').textContent = `${groups.length} site(s) • ${selected.length} fiche(s) éditables`;
+    refreshPrintDecorations();
     return;
   }
   if(map.getZoom() < 15) {
@@ -366,6 +388,7 @@ function refresh() {
     drawSiteFan(groups);
   }
   document.getElementById('counter').textContent = `${groups.length} site${groups.length>1?'s':''} • ${selected.length} production${selected.length>1?'s':''} affichée${selected.length>1?'s':''} sur ${features.length}`;
+  refreshPrintDecorations();
 }
 
 function reframe() {
@@ -537,10 +560,36 @@ document.head.appendChild(printPageRule);
 const printWorkspace = document.getElementById('print-workspace');
 const printSheet = document.getElementById('print-sheet');
 const printHolder = document.getElementById('print-map-holder');
+const printLegendList = document.getElementById('print-legend-list');
+const printLegendNote = document.getElementById('print-legend-note');
 const originalMapParent = document.getElementById('map').parentElement;
 const mapElement = document.getElementById('map');
 let printMode = false;
 function updatePrintMap(){ map.invalidateSize({animate:false}); }
+function updatePrintLegend() {
+  if (!printLegendList) return;
+  const bounds = map.getBounds();
+  const selected = getFilteredEntries();
+  const legendItems = getLegendData(selected, bounds);
+  printLegendList.innerHTML = '';
+  if (!legendItems.length) {
+    printLegendList.innerHTML = '<p class="print-legend-empty">Aucune catégorie visible dans l’emprise actuelle.</p>';
+    printLegendNote.textContent = 'Déplacez la carte ou modifiez les filtres pour faire apparaître une légende.';
+    return;
+  }
+  const totalVisible = legendItems.reduce((sum, item) => sum + item.count, 0);
+  printLegendNote.textContent = `${legendItems.length} catégorie(s) • ${totalVisible} point(s) visible(s) dans l’emprise affichée.`;
+  for (const item of legendItems) {
+    const row = document.createElement('div');
+    row.className = 'print-legend-item';
+    row.innerHTML = `<img src="${imagePath(item.category.icon)}" alt=""><span>${esc(item.category.name)}</span><small>${item.count}</small>`;
+    printLegendList.appendChild(row);
+  }
+}
+function refreshPrintDecorations() {
+  if (!printMode) return;
+  updatePrintLegend();
+}
 function openPrintMode(){
   if (editorEnabled) setEditor(false);
   if(printMode)return;
@@ -549,7 +598,7 @@ function openPrintMode(){
   printWorkspace.classList.add('open');
   printWorkspace.setAttribute('aria-hidden','false');
   printHolder.appendChild(mapElement);
-  requestAnimationFrame(()=>requestAnimationFrame(updatePrintMap));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ updatePrintMap(); updatePrintLegend(); }));
 }
 function closePrintMode(){
   if(!printMode)return;
@@ -566,14 +615,16 @@ document.getElementById('print-orientation').onchange=e=>{
   printPageRule.textContent=`@page { size: A4 ${orientation}; margin: 0; }`;
   printSheet.classList.toggle('portrait',orientation==='portrait');
   printSheet.classList.toggle('landscape',orientation==='landscape');
-  requestAnimationFrame(()=>requestAnimationFrame(updatePrintMap));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ updatePrintMap(); updatePrintLegend(); }));
 };
 document.getElementById('print-now').onclick=()=>{
   // Laisser à Leaflet un court délai pour finir de dessiner les tuiles après un zoom.
   updatePrintMap();
+  updatePrintLegend();
   setTimeout(()=>window.print(),650);
 };
-window.addEventListener('beforeprint',()=>{if(!printMode)openPrintMode();updatePrintMap()});
+window.addEventListener('beforeprint',()=>{if(!printMode)openPrintMode();updatePrintMap();updatePrintLegend();});
+map.on('moveend', refreshPrintDecorations);
 
 
 // V6 — Édition locale. Ne transmet aucune modification à un serveur.
