@@ -54,7 +54,17 @@ const markers = [];
 let territoryMaskLayer = null;
 let territoryCommuneLayer = null;
 let territoryBoundaryLayer = null;
+let communeGeoFeatures = [];
+let selectedCommuneCode = '';
+let communeHighlightLayer = null;
+// Service WMS public Sandre : référentiel BD TOPAGE 2026.
+const hydroLayer = L.tileLayer.wms('https://services.sandre.eaufrance.fr/geo/topage2026', {
+  layers: 'CoursEau_FXX_Topage2026', format: 'image/png', transparent: true,
+  version: '1.3.0', opacity: 0.9,
+  attribution: 'Hydrographie : BD TOPAGE® 2026 — IGN/OFB/Sandre'
+});
 
+let waterwaysOn = false;
 let currentBasemap = 'light';
 function setBasemap(mode) {
   currentBasemap = mode;
@@ -71,6 +81,7 @@ function setBasemap(mode) {
   if (territoryMaskLayer) {
     territoryMaskLayer.setStyle({ fillOpacity: mode === 'ortho' ? 0.50 : 0.68 });
   }
+  if (waterwaysOn && map.hasLayer(hydroLayer)) hydroLayer.bringToFront();
   document.querySelectorAll('.basemap-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.map === mode));
 }
 setBasemap('light');
@@ -191,7 +202,14 @@ function searchMatchesFeature(f, q) {
 }
 function getFilteredEntries() {
   const q = document.getElementById('search').value.trim().toLocaleLowerCase('fr');
-  return markers.filter(({ f }) => active.has(f.properties.categorie) && searchMatchesFeature(f, q));
+  const selectedCommune = selectedCommuneCode ? communeGeoFeatures.find(f => String(f.properties.code) === selectedCommuneCode) : null;
+  return markers.filter(({ f, originalLatLng }) => {
+    if (!active.has(f.properties.categorie) || !searchMatchesFeature(f, q)) return false;
+    if (selectedCommuneCode && !selectedCommune) return false;
+    if (!selectedCommune) return true;
+    try { return turf.booleanPointInPolygon(turf.point([originalLatLng.lng, originalLatLng.lat]), selectedCommune); }
+    catch (e) { console.warn('Filtre géographique indisponible', e); return false; }
+  });
 }
 function getLegendData(entries, bounds = null) {
   const visible = bounds ? entries.filter(entry => bounds.contains(entry.originalLatLng)) : entries;
@@ -449,6 +467,14 @@ async function loadTerritory() {
 
     const communesGeoRaw = await fetchJson(`https://geo.api.gouv.fr/communes?codeEpci=${epci.code}&format=geojson&geometry=contour&fields=nom,code,codesPostaux,population`);
     const communesGeo = asFeatureCollection(communesGeoRaw);
+    communeGeoFeatures = communesGeo.features.filter(f => f?.geometry && f?.properties?.code);
+    const select = document.getElementById('commune-select');
+    const previous = select.value;
+    select.replaceChildren(new Option('Toutes les communes de la CCPG', ''));
+    communeGeoFeatures.slice().sort((a,b) => (a.properties.nom || '').localeCompare(b.properties.nom || '', 'fr'))
+      .forEach(f => select.add(new Option(f.properties.nom, String(f.properties.code))));
+    selectedCommuneCode = communeGeoFeatures.some(f => String(f.properties.code) === previous) ? previous : '';
+    select.value = selectedCommuneCode;
 
     if (territoryCommuneLayer) map.removeLayer(territoryCommuneLayer);
     territoryCommuneLayer = L.geoJSON(communesGeo, {
@@ -480,6 +506,7 @@ async function loadTerritory() {
     drawTerritoryMask(epciFeature);
     territoryBounds = territoryBoundaryLayer.getBounds();
     status.textContent = `${communesGeo.features.length} communes CCPG chargées depuis geo.api.gouv.fr`;
+    refresh();
   } catch (error) {
     console.error(error);
     status.textContent = 'Contour communal indisponible pour le moment.';
@@ -540,6 +567,24 @@ document.getElementById('reset').onclick = () => {
   reframe();
 };
 document.getElementById('reframe').onclick = reframe;
+function selectCommune(code) {
+  selectedCommuneCode = code;
+  if (communeHighlightLayer) { map.removeLayer(communeHighlightLayer); communeHighlightLayer = null; }
+  const feature = communeGeoFeatures.find(f => String(f.properties.code) === code);
+  if (feature) {
+    communeHighlightLayer = L.geoJSON(feature, { interactive: false, style: {
+      color:'#a92e28', weight:3.5, fillColor:'#b63129', fillOpacity:0.06, className:'territory-selected'
+    }}).addTo(map);
+    map.fitBounds(communeHighlightLayer.getBounds().pad(0.08), { maxZoom:14 });
+  } else if (!code) reframe();
+  refresh();
+}
+document.getElementById('commune-select').addEventListener('change', e => selectCommune(e.target.value));
+document.getElementById('water-toggle').addEventListener('change', e => {
+  waterwaysOn = e.target.checked;
+  if (waterwaysOn) hydroLayer.addTo(map); else map.removeLayer(hydroLayer);
+  document.getElementById('water-status').textContent = waterwaysOn ? 'Couche hydrographique activée (BD TOPAGE®).' : '';
+});
 document.getElementById('mobile-toggle').onclick = () => {
   const p = document.getElementById('sidebar');
   const open = p.classList.toggle('open');
