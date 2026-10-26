@@ -211,3 +211,12 @@ h1 em{font-style:normal;color:var(--ccpg-green)}
  .print-sheet .print-legend{padding:1.8mm!important}
  .print-sheet .print-legend-item img{width:5mm!important;height:5mm!important}
 }
+
+/* V11.4 : filtrage géographique et calque hydrographique */
+.geo-options{padding:13px 0 11px;border-top:1px solid var(--ccpg-border);border-bottom:1px solid var(--ccpg-border);margin:2px 0 13px}
+.geo-label{display:block;font-size:12px;font-weight:700;color:#5c554f;margin:0 0 8px}
+.geo-select{width:100%;border:1px solid var(--ccpg-border);border-radius:10px;padding:10px 11px;background:#fff;color:#514640;font:12px 'DM Sans',sans-serif;cursor:pointer}
+.water-toggle{display:flex;align-items:center;gap:9px;margin-top:12px;color:#554945;font-size:12px;font-weight:600;cursor:pointer}
+.water-toggle input{accent-color:#347da0;width:16px;height:16px;margin:0}
+.geo-status{font-size:10px;line-height:1.4;color:#7c746e;margin:5px 0 0}
+.territory-selected{pointer-events:none}
