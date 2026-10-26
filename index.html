@@ -32,6 +32,15 @@
         <button id="btn-basemap-ortho" class="basemap-btn" type="button" data-map="ortho">Orthophoto</button>
       </div>
 
+      <div class="geo-options">
+        <label class="geo-label" for="commune-select">Filtrer par commune</label>
+        <select id="commune-select" class="geo-select" aria-label="Sélectionner une commune">
+          <option value="">Toutes les communes de la CCPG</option>
+        </select>
+        <label class="water-toggle"><input type="checkbox" id="water-toggle"><span>Afficher les cours d’eau</span></label>
+        <p id="water-status" class="geo-status" role="status"></p>
+      </div>
+
       <div class="filter-head">
         <h2>Productions</h2>
         <button id="reset" class="link-button" type="button">Tout afficher</button>
