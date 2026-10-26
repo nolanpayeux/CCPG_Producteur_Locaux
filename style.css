@@ -224,3 +224,8 @@ h1 em{font-style:normal;color:var(--ccpg-green)}
 /* Étiquettes hydrographiques */
 .water-name-label{background:none;border:0;pointer-events:none;text-align:center;overflow:visible}
 .water-name-label span{display:inline-block;max-width:150px;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.76);color:#146a99;font:italic 600 11px 'DM Sans',sans-serif;text-shadow:0 1px white;white-space:normal;line-height:1.2}
+
+/* V11.7 — Affichage sobre des axes et repère patrimonial */
+.heritage-marker{background:none;border:0;display:flex;align-items:center;gap:5px;white-space:nowrap;pointer-events:auto}
+.heritage-icon{display:grid;place-items:center;width:34px;height:34px;flex:none;border-radius:50%;border:2px solid white;background:#915328;color:#fff;font-size:22px;font-weight:800;box-shadow:0 2px 7px #38261966}
+.heritage-name{display:inline-block;background:#fffaf2ef;border:1px solid #ddc6b3;border-radius:7px;padding:5px 7px;color:#704425;font:700 12px 'DM Sans',sans-serif;box-shadow:0 2px 6px #38261933}
