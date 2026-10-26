@@ -21,6 +21,12 @@ map.createPane('territoryCommunePane');
 map.getPane('territoryCommunePane').style.zIndex = 250;
 map.createPane('territoryBoundaryPane');
 map.getPane('territoryBoundaryPane').style.zIndex = 260;
+map.createPane('communeSelectionPane');
+map.getPane('communeSelectionPane').style.zIndex = 275;
+map.getPane('communeSelectionPane').style.pointerEvents = 'none';
+map.createPane('waterNamesPane');
+map.getPane('waterNamesPane').style.zIndex = 455;
+map.getPane('waterNamesPane').style.pointerEvents = 'none';
 
 const lightBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
   attribution: 'Sources: Esri, HERE, Garmin, © OpenStreetMap contributors, and the GIS User Community',
@@ -57,6 +63,8 @@ let territoryBoundaryLayer = null;
 let communeGeoFeatures = [];
 let selectedCommuneCode = '';
 let communeHighlightLayer = null;
+const waterNamesLayer = L.layerGroup().addTo(map);
+let waterNamesRequest = 0;
 // Service WMS public Sandre : référentiel BD TOPAGE 2026.
 const hydroLayer = L.tileLayer.wms('https://services.sandre.eaufrance.fr/geo/topage2026', {
   layers: 'CoursEau_FXX_Topage2026', format: 'image/png', transparent: true,
@@ -572,18 +580,78 @@ function selectCommune(code) {
   if (communeHighlightLayer) { map.removeLayer(communeHighlightLayer); communeHighlightLayer = null; }
   const feature = communeGeoFeatures.find(f => String(f.properties.code) === code);
   if (feature) {
-    communeHighlightLayer = L.geoJSON(feature, { interactive: false, style: {
-      color:'#a92e28', weight:3.5, fillColor:'#b63129', fillOpacity:0.06, className:'territory-selected'
-    }}).addTo(map);
-    map.fitBounds(communeHighlightLayer.getBounds().pad(0.08), { maxZoom:14 });
+    // La commune demandée reste lisible ; seules les autres communes sont estompées.
+    const others = communeGeoFeatures.filter(f => String(f.properties.code) !== code);
+    communeHighlightLayer = L.layerGroup([
+      L.geoJSON({type:'FeatureCollection',features:others}, {pane:'communeSelectionPane',interactive:false,style:{
+        color:'#938984',weight:0.6,opacity:0.4,fillColor:'#d1ccc8',fillOpacity:0.48
+      }}),
+      L.geoJSON(feature, {pane:'communeSelectionPane',interactive:false,style:{
+        color:'#a92e28',weight:3.2,fillColor:'#ffffff',fillOpacity:0,className:'territory-selected'
+      }})
+    ]).addTo(map);
+    map.fitBounds(L.geoJSON(feature).getBounds().pad(0.08), { maxZoom:14 });
   } else if (!code) reframe();
   refresh();
 }
 document.getElementById('commune-select').addEventListener('change', e => selectCommune(e.target.value));
+// Les étiquettes proviennent des objets vectoriels BD TOPAGE lorsqu'un WFS GeoJSON
+// est disponible. La couche WMS principale reste utilisable si le WFS est indisponible.
+const waterNamesUrl = 'https://services.sandre.eaufrance.fr/geo/topage2026';
+function watercourseName(properties={}) {
+  const key = Object.keys(properties).find(k => /^(nomcoursdeau|nomcoursd.eau|toponyme|nom|libelle)$/i.test(k.replace(/[_\s-]/g,'')));
+  const value = key ? String(properties[key] || '').trim() : '';
+  return value && !/^(sans nom|inconnu|non renseign)/i.test(value) ? value : '';
+}
+function midpointLine(geometry) {
+  if (!geometry) return null;
+  const parts = geometry.type === 'LineString' ? [geometry.coordinates] : geometry.type === 'MultiLineString' ? geometry.coordinates : [];
+  const line = parts.sort((a,b) => b.length-a.length)[0];
+  if (!line || line.length < 2) return null;
+  const middle = line[Math.floor(line.length/2)];
+  return Array.isArray(middle) && middle.length>=2 ? [middle[1],middle[0]] : null;
+}
+async function refreshWaterNames() {
+  const request = ++waterNamesRequest;
+  waterNamesLayer.clearLayers();
+  if (!waterwaysOn || map.getZoom() < 12) return;
+  const b = map.getBounds();
+  const bbox = [b.getWest(),b.getSouth(),b.getEast(),b.getNorth()].join(',');
+  const u = new URL(waterNamesUrl);
+  u.searchParams.set('service','WFS'); u.searchParams.set('version','2.0.0');
+  u.searchParams.set('request','GetFeature'); u.searchParams.set('typeNames','CoursEau_FXX_Topage2026');
+  u.searchParams.set('outputFormat','application/json'); u.searchParams.set('srsName','EPSG:4326');
+  u.searchParams.set('bbox',`${bbox},EPSG:4326`); u.searchParams.set('count','120');
+  try {
+    const response = await fetch(u.toString());
+    if (!response.ok) throw new Error('Service hydrographique indisponible');
+    const data = await response.json();
+    if (request !== waterNamesRequest || !waterwaysOn) return;
+    const seen = new Set();
+    for (const feature of (data.features || [])) {
+      const name = watercourseName(feature.properties);
+      const point = midpointLine(feature.geometry);
+      if (!name || !point || seen.has(name)) continue;
+      seen.add(name);
+      L.marker(point,{pane:'waterNamesPane',interactive:false,icon:L.divIcon({
+        className:'water-name-label',html:`<span>${esc(name)}</span>`,iconSize:[150,24],iconAnchor:[75,12]
+      })}).addTo(waterNamesLayer);
+    }
+    document.getElementById('water-status').textContent = seen.size
+      ? `${seen.size} cours d’eau nommés dans la zone affichée.`
+      : 'Cours d’eau visibles ; aucun nom disponible à ce zoom.';
+  } catch(e) {
+    if (request === waterNamesRequest && waterwaysOn) {
+      document.getElementById('water-status').textContent = 'Cours d’eau affichés ; noms indisponibles via le service de données.';
+    }
+  }
+}
+map.on('moveend', refreshWaterNames);
 document.getElementById('water-toggle').addEventListener('change', e => {
   waterwaysOn = e.target.checked;
   if (waterwaysOn) hydroLayer.addTo(map); else map.removeLayer(hydroLayer);
   document.getElementById('water-status').textContent = waterwaysOn ? 'Couche hydrographique activée (BD TOPAGE®).' : '';
+  refreshWaterNames();
 });
 document.getElementById('mobile-toggle').onclick = () => {
   const p = document.getElementById('sidebar');
