@@ -24,9 +24,6 @@ map.getPane('territoryBoundaryPane').style.zIndex = 260;
 map.createPane('communeSelectionPane');
 map.getPane('communeSelectionPane').style.zIndex = 275;
 map.getPane('communeSelectionPane').style.pointerEvents = 'none';
-map.createPane('waterNamesPane');
-map.getPane('waterNamesPane').style.zIndex = 455;
-map.getPane('waterNamesPane').style.pointerEvents = 'none';
 
 const lightBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
   attribution: 'Sources: Esri, HERE, Garmin, © OpenStreetMap contributors, and the GIS User Community',
@@ -63,16 +60,30 @@ let territoryBoundaryLayer = null;
 let communeGeoFeatures = [];
 let selectedCommuneCode = '';
 let communeHighlightLayer = null;
-const waterNamesLayer = L.layerGroup().addTo(map);
-let waterNamesRequest = 0;
-// Service WMS public Sandre : référentiel BD TOPAGE 2026.
-const hydroLayer = L.tileLayer.wms('https://services.sandre.eaufrance.fr/geo/topage2026', {
-  layers: 'CoursEau_FXX_Topage2026', format: 'image/png', transparent: true,
-  version: '1.3.0', opacity: 0.9,
-  attribution: 'Hydrographie : BD TOPAGE® 2026 — IGN/OFB/Sandre'
-});
-
+// Couches vectorielles : seules les voies principales et le Rhône / Gardon.
+map.createPane('roadsOverlayPane');
+map.getPane('roadsOverlayPane').style.zIndex = 355;
+map.getPane('roadsOverlayPane').style.pointerEvents = 'none';
+map.createPane('riversOverlayPane');
+map.getPane('riversOverlayPane').style.zIndex = 365;
+map.getPane('riversOverlayPane').style.pointerEvents = 'none';
+const roadLayer = L.layerGroup();
+const riverLayer = L.layerGroup();
+let roadsOn = false;
 let waterwaysOn = false;
+let thematicRequest = 0;
+let thematicTimer = null;
+
+// Patrimoine UNESCO, indépendant des filtres producteurs / communes.
+const pontDuGard = L.marker([43.9472222, 4.5352778], {
+  icon: L.divIcon({
+    className:'heritage-marker',
+    html:'<span class="heritage-icon">⌂</span><span class="heritage-name">Pont du Gard</span>',
+    iconSize:[134,35],iconAnchor:[17,33],popupAnchor:[0,-30]
+  }),
+  zIndexOffset: 1200, title:'Pont du Gard'
+}).bindPopup('<strong>Pont du Gard</strong><br>Monument inscrit au patrimoine mondial de l’UNESCO.<br><a href="https://pontdugard.fr/fr" target="_blank" rel="noopener noreferrer">Découvrir le site officiel</a>').addTo(map);
+
 let currentBasemap = 'light';
 function setBasemap(mode) {
   currentBasemap = mode;
@@ -89,7 +100,7 @@ function setBasemap(mode) {
   if (territoryMaskLayer) {
     territoryMaskLayer.setStyle({ fillOpacity: mode === 'ortho' ? 0.50 : 0.68 });
   }
-  if (waterwaysOn && map.hasLayer(hydroLayer)) hydroLayer.bringToFront();
+
   document.querySelectorAll('.basemap-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.map === mode));
 }
 setBasemap('light');
@@ -101,7 +112,7 @@ const layer = L.markerClusterGroup({
   showCoverageOnHover: false,
   spiderfyOnMaxZoom: true,
   zoomToBoundsOnClick: true,
-  maxClusterRadius: zoom => zoom >= 15 ? 37 : 52,
+  maxClusterRadius: zoom => zoom >= 13 ? 37 : 52,
   disableClusteringAtZoom: 21,
   iconCreateFunction(c) {
     const n = c.getChildCount();
@@ -180,13 +191,33 @@ function popup(f) {
 function initFilters() {
   const wrap = document.getElementById('filters');
   wrap.innerHTML = '';
-  const counts = Object.fromEntries(categories.map(c => [c.key, features.filter(f => f.properties.categorie === c.key).length]));
+  // Le volet Productions dépend uniquement de la commune : il reste indépendant
+  // des catégories activées et du texte recherché, pour éviter des disparitions
+  // de boutons lorsque l'utilisateur affine sa recherche.
+  const commune = selectedCommuneCode
+    ? communeGeoFeatures.find(f => String(f.properties.code) === selectedCommuneCode)
+    : null;
+  const counts = Object.fromEntries(categories.map(c => [c.key, 0]));
+  for (const f of features) {
+    const key = f.properties.categorie;
+    if (!(key in counts)) continue;
+    if (selectedCommuneCode) {
+      if (!commune || !window.turf) continue;
+      const coords = f.geometry?.coordinates;
+      if (!Array.isArray(coords)) continue;
+      try {
+        if (!turf.booleanPointInPolygon(turf.point(coords), commune)) continue;
+      } catch (_) { continue; }
+    }
+    counts[key]++;
+  }
   for (const c of categories) {
+    if (selectedCommuneCode && !counts[c.key]) continue;
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'filter on';
+    b.className = 'filter' + (active.has(c.key) ? ' on' : '');
     b.dataset.category = c.key;
-    b.setAttribute('aria-pressed', 'true');
+    b.setAttribute('aria-pressed', String(active.has(c.key)));
     b.innerHTML = `<img src="${imagePath(c.icon)}" alt=""><span>${esc(c.name)}</span><small>${counts[c.key] || 0}</small>`;
     b.onclick = () => {
       if (active.has(c.key)) active.delete(c.key); else active.add(c.key);
@@ -347,7 +378,7 @@ function drawSiteFan(groups,forEdition=false) {
     const itemsToRender=forEdition ? group.members.map(x=>({category:x.f.properties.categorie,items:[x]})) : group.categories.map(category=>({category,items:group.members.filter(x=>x.f.properties.categorie===category)}));
     const n = itemsToRender.length;
     const size = iconSize();
-    const radius = Math.max(size * 1.30, (size+14)/(2*Math.sin(Math.PI/n)));
+    const radius = Math.max(size * 1.22, (size+11)/(2*Math.sin(Math.PI/n)));
     const marker = L.circleMarker(group.position, {
       radius:5, color:'#a93b30', weight:2, fillColor:'#ffffff',fillOpacity:1,interactive:true,
       title:group.title
@@ -388,7 +419,7 @@ function refresh() {
     // Les clusters classiques cachaient les fiches et empêchaient leur sélection.
     // Zoom faible : chaque site est cliquable et amène aux fiches individuelles.
     // Zoom détaillé : chaque OBJET source a son propre pictogramme dans l'éventail.
-    if(map.getZoom()<15){
+    if(map.getZoom()<13){
       map.addLayer(siteFanMarkers);
       groups.forEach(g=>{
         const m=siteMarker(g);
@@ -405,7 +436,7 @@ function refresh() {
     refreshPrintDecorations();
     return;
   }
-  if(map.getZoom() < 15) {
+  if(map.getZoom() < 13) {
     map.addLayer(layer);
     groups.forEach(g=>layer.addLayer(siteMarker(g)));
   } else {
@@ -419,7 +450,7 @@ function refresh() {
 
 function reframe() {
   const group = layer.getBounds();
-  if (group.isValid() && map.getZoom() < 15) {
+  if (group.isValid() && map.getZoom() < 13) {
     map.fitBounds(group.pad(.15), { maxZoom: 13 });
   } else if (territoryBounds) {
     map.fitBounds(territoryBounds.pad(.03), { maxZoom: 12 });
@@ -483,6 +514,8 @@ async function loadTerritory() {
       .forEach(f => select.add(new Option(f.properties.nom, String(f.properties.code))));
     selectedCommuneCode = communeGeoFeatures.some(f => String(f.properties.code) === previous) ? previous : '';
     select.value = selectedCommuneCode;
+    initFilters();
+    syncFilters();
 
     if (territoryCommuneLayer) map.removeLayer(territoryCommuneLayer);
     territoryCommuneLayer = L.geoJSON(communesGeo, {
@@ -592,66 +625,82 @@ function selectCommune(code) {
     ]).addTo(map);
     map.fitBounds(L.geoJSON(feature).getBounds().pad(0.08), { maxZoom:14 });
   } else if (!code) reframe();
+  initFilters();
+  syncFilters();
   refresh();
 }
 document.getElementById('commune-select').addEventListener('change', e => selectCommune(e.target.value));
-// Les étiquettes proviennent des objets vectoriels BD TOPAGE lorsqu'un WFS GeoJSON
-// est disponible. La couche WMS principale reste utilisable si le WFS est indisponible.
-const waterNamesUrl = 'https://services.sandre.eaufrance.fr/geo/topage2026';
-function watercourseName(properties={}) {
-  const key = Object.keys(properties).find(k => /^(nomcoursdeau|nomcoursd.eau|toponyme|nom|libelle)$/i.test(k.replace(/[_\s-]/g,'')));
-  const value = key ? String(properties[key] || '').trim() : '';
-  return value && !/^(sans nom|inconnu|non renseign)/i.test(value) ? value : '';
+// Données vectorielles OpenStreetMap (Overpass) : classes principales uniquement.
+// Les tracés sont mis en cache selon l'emprise et rechargés au déplacement significatif.
+function osmElementsToLines(elements) {
+  return (elements || []).filter(x => x.type === 'way' && Array.isArray(x.geometry) && x.geometry.length > 1);
 }
-function midpointLine(geometry) {
-  if (!geometry) return null;
-  const parts = geometry.type === 'LineString' ? [geometry.coordinates] : geometry.type === 'MultiLineString' ? geometry.coordinates : [];
-  const line = parts.sort((a,b) => b.length-a.length)[0];
-  if (!line || line.length < 2) return null;
-  const middle = line[Math.floor(line.length/2)];
-  return Array.isArray(middle) && middle.length>=2 ? [middle[1],middle[0]] : null;
+function themeIsRiver(name) {
+  const norm = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  return /\b(rhone|gardon)\b/.test(norm);
 }
-async function refreshWaterNames() {
-  const request = ++waterNamesRequest;
-  waterNamesLayer.clearLayers();
-  if (!waterwaysOn || map.getZoom() < 12) return;
-  const b = map.getBounds();
-  const bbox = [b.getWest(),b.getSouth(),b.getEast(),b.getNorth()].join(',');
-  const u = new URL(waterNamesUrl);
-  u.searchParams.set('service','WFS'); u.searchParams.set('version','2.0.0');
-  u.searchParams.set('request','GetFeature'); u.searchParams.set('typeNames','CoursEau_FXX_Topage2026');
-  u.searchParams.set('outputFormat','application/json'); u.searchParams.set('srsName','EPSG:4326');
-  u.searchParams.set('bbox',`${bbox},EPSG:4326`); u.searchParams.set('count','120');
+function drawThemeLine(points, options, target) {
+  if (points.length < 2) return;
+  L.polyline(points, {...options, interactive:false}).addTo(target);
+}
+async function requestThematicData() {
+  const id=++thematicRequest;
+  roadLayer.clearLayers(); riverLayer.clearLayers();
+  if (!roadsOn && !waterwaysOn) return;
+  const b=map.getBounds().pad(0.07);
+  // L'emprise initiale est limitée pour ménager le service public.
+  const bbox=[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()].map(x=>x.toFixed(5)).join(',');
+  const parts=[];
+  if (roadsOn) parts.push(`way["highway"~"^(motorway|trunk|primary)$"](${bbox});`);
+  if (waterwaysOn) parts.push(`way["waterway"~"^(river|stream)$"]["name"~"Rhône|Rhone|Gardon",i](${bbox});`);
+  const query=`[out:json][timeout:20];(${parts.join('')});out geom;`;
+  const params=new URLSearchParams({data:query});
   try {
-    const response = await fetch(u.toString());
-    if (!response.ok) throw new Error('Service hydrographique indisponible');
-    const data = await response.json();
-    if (request !== waterNamesRequest || !waterwaysOn) return;
-    const seen = new Set();
-    for (const feature of (data.features || [])) {
-      const name = watercourseName(feature.properties);
-      const point = midpointLine(feature.geometry);
-      if (!name || !point || seen.has(name)) continue;
-      seen.add(name);
-      L.marker(point,{pane:'waterNamesPane',interactive:false,icon:L.divIcon({
-        className:'water-name-label',html:`<span>${esc(name)}</span>`,iconSize:[150,24],iconAnchor:[75,12]
-      })}).addTo(waterNamesLayer);
+    const response=await fetch('https://overpass.kumi.systems/api/interpreter?'+params.toString());
+    if(!response.ok) throw new Error('HTTP '+response.status);
+    const data=await response.json();
+    if(id!==thematicRequest) return;
+    const names=new Set(); let routes=0;
+    for(const e of osmElementsToLines(data.elements)) {
+      const latlngs=e.geometry.map(pt=>[pt.lat,pt.lon]);
+      if (roadsOn && /^(motorway|trunk|primary)$/.test(e.tags?.highway||'')) {
+        const major=e.tags.highway==='motorway';
+        drawThemeLine(latlngs,{pane:'roadsOverlayPane',color:'#fff6ed',opacity:.90,weight:major?8:6},roadLayer);
+        drawThemeLine(latlngs,{pane:'roadsOverlayPane',color:major?'#c57452':'#d49b70',opacity:.90,weight:major?4.2:3},roadLayer);
+        routes++;
+      }
+      if(waterwaysOn && themeIsRiver(e.tags?.name)) {
+        drawThemeLine(latlngs,{pane:'riversOverlayPane',color:'#f0fbff',opacity:.95,weight:11},riverLayer);
+        drawThemeLine(latlngs,{pane:'riversOverlayPane',color:'#45a9c4',opacity:.88,weight:6.5},riverLayer);
+        const n=String(e.tags.name || '').toLowerCase().includes('rhon') || String(e.tags.name||'').toLowerCase().includes('rhô') ? 'Rhône' : 'Gardon';
+        names.add(n);
+      }
     }
-    document.getElementById('water-status').textContent = seen.size
-      ? `${seen.size} cours d’eau nommés dans la zone affichée.`
-      : 'Cours d’eau visibles ; aucun nom disponible à ce zoom.';
+    if (waterwaysOn) document.getElementById('water-status').textContent= names.size ? `Cours d’eau affichés : ${[...names].join(' et ')}.` : 'Aucun tronçon nommé Rhône ou Gardon dans l’emprise actuelle.';
+    if (roadsOn) document.getElementById('road-status').textContent=routes ? 'Grands axes routiers affichés.' : 'Aucun grand axe dans l’emprise actuelle.';
   } catch(e) {
-    if (request === waterNamesRequest && waterwaysOn) {
-      document.getElementById('water-status').textContent = 'Cours d’eau affichés ; noms indisponibles via le service de données.';
-    }
+    if(id!==thematicRequest) return;
+    if(waterwaysOn) document.getElementById('water-status').textContent='Hydrographie temporairement indisponible.';
+    if(roadsOn) document.getElementById('road-status').textContent='Tracés routiers temporairement indisponibles.';
+    console.warn('Chargement des tracés cartographiques impossible',e);
   }
 }
-map.on('moveend', refreshWaterNames);
-document.getElementById('water-toggle').addEventListener('change', e => {
-  waterwaysOn = e.target.checked;
-  if (waterwaysOn) hydroLayer.addTo(map); else map.removeLayer(hydroLayer);
-  document.getElementById('water-status').textContent = waterwaysOn ? 'Couche hydrographique activée (BD TOPAGE®).' : '';
-  refreshWaterNames();
+function scheduleThematicLoad() {
+  clearTimeout(thematicTimer);
+  thematicTimer=setTimeout(requestThematicData,500);
+}
+map.on('moveend',scheduleThematicLoad);
+document.getElementById('water-toggle').addEventListener('change', e=>{
+  waterwaysOn=e.target.checked;
+  if(waterwaysOn)riverLayer.addTo(map); else map.removeLayer(riverLayer);
+  document.getElementById('water-status').textContent=waterwaysOn?'Chargement du Rhône et du Gardon…':'';
+  scheduleThematicLoad();
+});
+document.getElementById('road-toggle').addEventListener('change', e=>{
+  roadsOn=e.target.checked;
+  if(roadsOn)roadLayer.addTo(map);else map.removeLayer(roadLayer);
+  document.getElementById('road-status').textContent=roadsOn?'Chargement des grands axes…':'';
+  scheduleThematicLoad();
 });
 document.getElementById('mobile-toggle').onclick = () => {
   const p = document.getElementById('sidebar');
