@@ -220,3 +220,7 @@ h1 em{font-style:normal;color:var(--ccpg-green)}
 .water-toggle input{accent-color:#347da0;width:16px;height:16px;margin:0}
 .geo-status{font-size:10px;line-height:1.4;color:#7c746e;margin:5px 0 0}
 .territory-selected{pointer-events:none}
+
+/* Étiquettes hydrographiques */
+.water-name-label{background:none;border:0;pointer-events:none;text-align:center;overflow:visible}
+.water-name-label span{display:inline-block;max-width:150px;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.76);color:#146a99;font:italic 600 11px 'DM Sans',sans-serif;text-shadow:0 1px white;white-space:normal;line-height:1.2}
