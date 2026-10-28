@@ -71,8 +71,6 @@ const roadLayer = L.layerGroup();
 const riverLayer = L.layerGroup();
 let roadsOn = false;
 let waterwaysOn = false;
-let thematicRequest = 0;
-let thematicTimer = null;
 
 // Patrimoine UNESCO, indépendant des filtres producteurs / communes.
 const pontDuGard = L.marker([43.9472222, 4.5352778], {
@@ -630,77 +628,82 @@ function selectCommune(code) {
   refresh();
 }
 document.getElementById('commune-select').addEventListener('change', e => selectCommune(e.target.value));
-// Données vectorielles OpenStreetMap (Overpass) : classes principales uniquement.
-// Les tracés sont mis en cache selon l'emprise et rechargés au déplacement significatif.
-function osmElementsToLines(elements) {
-  return (elements || []).filter(x => x.type === 'way' && Array.isArray(x.geometry) && x.geometry.length > 1);
+// Couche statique : deux GeoJSON déployés dans data/ avec le site.
+// Aucune requête à Overpass lors de la navigation ou du changement de zoom.
+let staticRoads = null;
+let staticRivers = null;
+let roadsPromise = null;
+let riversPromise = null;
+function drawStaticLine(points, options, target) {
+  if (points.length >= 2) L.polyline(points, { ...options, interactive:false }).addTo(target);
 }
-function themeIsRiver(name) {
-  const norm = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  return /\b(rhone|gardon)\b/.test(norm);
-}
-function drawThemeLine(points, options, target) {
-  if (points.length < 2) return;
-  L.polyline(points, {...options, interactive:false}).addTo(target);
-}
-async function requestThematicData() {
-  const id=++thematicRequest;
-  roadLayer.clearLayers(); riverLayer.clearLayers();
-  if (!roadsOn && !waterwaysOn) return;
-  const b=map.getBounds().pad(0.07);
-  // L'emprise initiale est limitée pour ménager le service public.
-  const bbox=[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()].map(x=>x.toFixed(5)).join(',');
-  const parts=[];
-  if (roadsOn) parts.push(`way["highway"~"^(motorway|trunk|primary)$"](${bbox});`);
-  if (waterwaysOn) parts.push(`way["waterway"~"^(river|stream)$"]["name"~"Rhône|Rhone|Gardon",i](${bbox});`);
-  const query=`[out:json][timeout:20];(${parts.join('')});out geom;`;
-  const params=new URLSearchParams({data:query});
-  try {
-    const response=await fetch('https://overpass.kumi.systems/api/interpreter?'+params.toString());
-    if(!response.ok) throw new Error('HTTP '+response.status);
-    const data=await response.json();
-    if(id!==thematicRequest) return;
-    const names=new Set(); let routes=0;
-    for(const e of osmElementsToLines(data.elements)) {
-      const latlngs=e.geometry.map(pt=>[pt.lat,pt.lon]);
-      if (roadsOn && /^(motorway|trunk|primary)$/.test(e.tags?.highway||'')) {
-        const major=e.tags.highway==='motorway';
-        drawThemeLine(latlngs,{pane:'roadsOverlayPane',color:'#fff6ed',opacity:.90,weight:major?8:6},roadLayer);
-        drawThemeLine(latlngs,{pane:'roadsOverlayPane',color:major?'#c57452':'#d49b70',opacity:.90,weight:major?4.2:3},roadLayer);
-        routes++;
-      }
-      if(waterwaysOn && themeIsRiver(e.tags?.name)) {
-        drawThemeLine(latlngs,{pane:'riversOverlayPane',color:'#f0fbff',opacity:.95,weight:11},riverLayer);
-        drawThemeLine(latlngs,{pane:'riversOverlayPane',color:'#45a9c4',opacity:.88,weight:6.5},riverLayer);
-        const n=String(e.tags.name || '').toLowerCase().includes('rhon') || String(e.tags.name||'').toLowerCase().includes('rhô') ? 'Rhône' : 'Gardon';
-        names.add(n);
-      }
-    }
-    if (waterwaysOn) document.getElementById('water-status').textContent= names.size ? `Cours d’eau affichés : ${[...names].join(' et ')}.` : 'Aucun tronçon nommé Rhône ou Gardon dans l’emprise actuelle.';
-    if (roadsOn) document.getElementById('road-status').textContent=routes ? 'Grands axes routiers affichés.' : 'Aucun grand axe dans l’emprise actuelle.';
-  } catch(e) {
-    if(id!==thematicRequest) return;
-    if(waterwaysOn) document.getElementById('water-status').textContent='Hydrographie temporairement indisponible.';
-    if(roadsOn) document.getElementById('road-status').textContent='Tracés routiers temporairement indisponibles.';
-    console.warn('Chargement des tracés cartographiques impossible',e);
+function forEachLine(feature, callback) {
+  const g=feature?.geometry;
+  if (!g) return;
+  const lines=g.type==='LineString' ? [g.coordinates] : g.type==='MultiLineString' ? g.coordinates : [];
+  for(const line of lines) {
+    if(line.length>1)callback(line.map(([lon,lat])=>[lat,lon]));
   }
 }
-function scheduleThematicLoad() {
-  clearTimeout(thematicTimer);
-  thematicTimer=setTimeout(requestThematicData,500);
+async function fetchStaticLayer(filename) {
+  const response = await fetch(`data/${filename}`);
+  if (!response.ok) throw new Error(`${filename} : HTTP ${response.status}`);
+  const data=await response.json();
+  if(data.type!=='FeatureCollection' || !Array.isArray(data.features)) throw new Error(`${filename} : GeoJSON invalide`);
+  return data.features;
 }
-map.on('moveend',scheduleThematicLoad);
-document.getElementById('water-toggle').addEventListener('change', e=>{
+function drawStoredRoads(features) {
+  roadLayer.clearLayers();
+  for(const feature of features) {
+    const major = feature.properties?.highway==='motorway';
+    forEachLine(feature,latlngs=>{
+      drawStaticLine(latlngs,{pane:'roadsOverlayPane',color:'#fff6ed',opacity:.90,weight:major?8:6},roadLayer);
+      drawStaticLine(latlngs,{pane:'roadsOverlayPane',color:major?'#c57452':'#d49b70',opacity:.90,weight:major?4.2:3},roadLayer);
+    });
+  }
+}
+function drawStoredRivers(features) {
+  riverLayer.clearLayers();
+  for(const feature of features) {
+    forEachLine(feature,latlngs=>{
+      drawStaticLine(latlngs,{pane:'riversOverlayPane',color:'#f0fbff',opacity:.95,weight:11},riverLayer);
+      drawStaticLine(latlngs,{pane:'riversOverlayPane',color:'#45a9c4',opacity:.88,weight:6.5},riverLayer);
+    });
+  }
+}
+async function toggleStaticRoads() {
+  const status=document.getElementById('road-status');
+  if(!roadsOn){map.removeLayer(roadLayer);status.textContent='';return;}
+  roadLayer.addTo(map);
+  if(staticRoads){status.textContent='Grands axes routiers affichés.';return;}
+  status.textContent='Chargement local des routes…';
+  try{
+    roadsPromise ||= fetchStaticLayer('routes_principales.geojson');
+    staticRoads=await roadsPromise;
+    drawStoredRoads(staticRoads);
+    if(roadsOn)status.textContent='Grands axes routiers affichés.';
+  }catch(e){roadsPromise=null;status.textContent='Fichier routes_principales.geojson absent ou invalide.';console.warn(e);}
+}
+async function toggleStaticRivers() {
+  const status=document.getElementById('water-status');
+  if(!waterwaysOn){map.removeLayer(riverLayer);status.textContent='';return;}
+  riverLayer.addTo(map);
+  if(staticRivers){status.textContent='Rhône et Gardon affichés.';return;}
+  status.textContent='Chargement local du Rhône et du Gardon…';
+  try{
+    riversPromise ||= fetchStaticLayer('cours_eau.geojson');
+    staticRivers=await riversPromise;
+    drawStoredRivers(staticRivers);
+    if(waterwaysOn)status.textContent='Rhône et Gardon affichés.';
+  }catch(e){riversPromise=null;status.textContent='Fichier cours_eau.geojson absent ou invalide.';console.warn(e);}
+}
+document.getElementById('water-toggle').addEventListener('change',e=>{
   waterwaysOn=e.target.checked;
-  if(waterwaysOn)riverLayer.addTo(map); else map.removeLayer(riverLayer);
-  document.getElementById('water-status').textContent=waterwaysOn?'Chargement du Rhône et du Gardon…':'';
-  scheduleThematicLoad();
+  toggleStaticRivers();
 });
-document.getElementById('road-toggle').addEventListener('change', e=>{
+document.getElementById('road-toggle').addEventListener('change',e=>{
   roadsOn=e.target.checked;
-  if(roadsOn)roadLayer.addTo(map);else map.removeLayer(roadLayer);
-  document.getElementById('road-status').textContent=roadsOn?'Chargement des grands axes…':'';
-  scheduleThematicLoad();
+  toggleStaticRoads();
 });
 document.getElementById('mobile-toggle').onclick = () => {
   const p = document.getElementById('sidebar');
