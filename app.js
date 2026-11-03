@@ -494,16 +494,28 @@ async function loadTerritory() {
   const status = document.getElementById('territory-status');
   status.textContent = 'Chargement du contour des communes…';
   try {
-    const epcis = await fetchJson('https://geo.api.gouv.fr/epcis?nom=Pont%20du%20Gard&fields=nom,code');
-    const epci = Array.isArray(epcis) ? (epcis.find(x => /pont du gard/i.test(x.nom || '')) || epcis[0]) : null;
-    if (!epci?.code) throw new Error('CCPG introuvable dans geo.api.gouv.fr');
-
-    const epciGeoRaw = await fetchJson(`https://geo.api.gouv.fr/epcis/${epci.code}?format=geojson&geometry=contour&fields=nom,code`);
-    const epciGeo = asFeatureCollection(epciGeoRaw);
+    // Priorité aux contours stockés dans le dépôt : pas de dépendance réseau au chargement.
+    // Sans ces deux fichiers, repli sur geo.api.gouv.fr pour compatibilité avec les anciennes versions.
+    let epciGeo, communesGeo;
+    try {
+      const [localEpci, localCommunes] = await Promise.all([
+        fetchJson('data/perimetre_ccpg.geojson'),
+        fetchJson('data/communes_ccpg.geojson')
+      ]);
+      epciGeo = asFeatureCollection(localEpci);
+      communesGeo = asFeatureCollection(localCommunes);
+      if (!epciGeo.features.length || !communesGeo.features.length ||
+          !communesGeo.features.every(f => f.properties?.code && f.geometry)) {
+        throw new Error('Contours communaux locaux incomplets.');
+      }
+    } catch (_) {
+      const epcis = await fetchJson('https://geo.api.gouv.fr/epcis?nom=Pont%20du%20Gard&fields=nom,code');
+      const epci = Array.isArray(epcis) ? (epcis.find(x => /pont du gard/i.test(x.nom || '')) || epcis[0]) : null;
+      if (!epci?.code) throw new Error('CCPG introuvable dans geo.api.gouv.fr');
+      epciGeo = asFeatureCollection(await fetchJson(`https://geo.api.gouv.fr/epcis/${epci.code}?format=geojson&geometry=contour&fields=nom,code`));
+      communesGeo = asFeatureCollection(await fetchJson(`https://geo.api.gouv.fr/communes?codeEpci=${epci.code}&format=geojson&geometry=contour&fields=nom,code,codesPostaux,population`));
+    }
     const epciFeature = epciGeo.features[0];
-
-    const communesGeoRaw = await fetchJson(`https://geo.api.gouv.fr/communes?codeEpci=${epci.code}&format=geojson&geometry=contour&fields=nom,code,codesPostaux,population`);
-    const communesGeo = asFeatureCollection(communesGeoRaw);
     communeGeoFeatures = communesGeo.features.filter(f => f?.geometry && f?.properties?.code);
     const select = document.getElementById('commune-select');
     const previous = select.value;
@@ -544,7 +556,7 @@ async function loadTerritory() {
 
     drawTerritoryMask(epciFeature);
     territoryBounds = territoryBoundaryLayer.getBounds();
-    status.textContent = `${communesGeo.features.length} communes CCPG chargées depuis geo.api.gouv.fr`;
+    status.textContent = `${communesGeo.features.length} communes CCPG chargées`;
     refresh();
   } catch (error) {
     console.error(error);
@@ -654,20 +666,27 @@ async function fetchStaticLayer(filename) {
 }
 function drawStoredRoads(features) {
   roadLayer.clearLayers();
-  for(const feature of features) {
-    const major = feature.properties?.highway==='motorway';
-    forEachLine(feature,latlngs=>{
-      drawStaticLine(latlngs,{pane:'roadsOverlayPane',color:'#fff6ed',opacity:.90,weight:major?8:6},roadLayer);
-      drawStaticLine(latlngs,{pane:'roadsOverlayPane',color:major?'#c57452':'#d49b70',opacity:.90,weight:major?4.2:3},roadLayer);
+  for (const feature of features) {
+    const roadClass = String(feature.properties?.highway || '');
+    const motorway = roadClass.startsWith('motorway');
+    const main = motorway || roadClass.startsWith('trunk') || roadClass.startsWith('primary');
+    const secondary = roadClass.startsWith('secondary');
+    const weight = motorway ? 4.1 : main ? 3.3 : secondary ? 2.5 : 1.8;
+    const color = motorway ? '#c67b4d' : main ? '#d79a6b' : secondary ? '#c6a38a' : '#b9a9a0';
+    forEachLine(feature, latlngs => {
+      // Une seule ligne par tronçon : pas de liseré blanc répété à chaque jonction.
+      drawStaticLine(latlngs, {pane:'roadsOverlayPane',color,opacity:.82,weight,
+        lineCap:'round',lineJoin:'round',smoothFactor:1.25},roadLayer);
     });
   }
 }
 function drawStoredRivers(features) {
   riverLayer.clearLayers();
-  for(const feature of features) {
-    forEachLine(feature,latlngs=>{
-      drawStaticLine(latlngs,{pane:'riversOverlayPane',color:'#f0fbff',opacity:.95,weight:11},riverLayer);
-      drawStaticLine(latlngs,{pane:'riversOverlayPane',color:'#45a9c4',opacity:.88,weight:6.5},riverLayer);
+  for (const feature of features) {
+    forEachLine(feature, latlngs => {
+      // Trait plus discret pour préserver les détails de la carte et les marqueurs.
+      drawStaticLine(latlngs, {pane:'riversOverlayPane',color:'#effaff',opacity:.88,weight:8},riverLayer);
+      drawStaticLine(latlngs, {pane:'riversOverlayPane',color:'#55b5c9',opacity:.84,weight:4.5},riverLayer);
     });
   }
 }
