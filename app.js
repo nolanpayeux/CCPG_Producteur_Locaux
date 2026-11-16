@@ -72,16 +72,6 @@ const riverLayer = L.layerGroup();
 let roadsOn = false;
 let waterwaysOn = false;
 
-// Patrimoine UNESCO, indépendant des filtres producteurs / communes.
-const pontDuGard = L.marker([43.9472222, 4.5352778], {
-  icon: L.divIcon({
-    className:'heritage-marker',
-    html:'<span class="heritage-icon">⌂</span><span class="heritage-name">Pont du Gard</span>',
-    iconSize:[134,35],iconAnchor:[17,33],popupAnchor:[0,-30]
-  }),
-  zIndexOffset: 1200, title:'Pont du Gard'
-}).bindPopup('<strong>Pont du Gard</strong><br>Monument inscrit au patrimoine mondial de l’UNESCO.<br><a href="https://pontdugard.fr/fr" target="_blank" rel="noopener noreferrer">Découvrir le site officiel</a>').addTo(map);
-
 let currentBasemap = 'light';
 function setBasemap(mode) {
   currentBasemap = mode;
