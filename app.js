@@ -72,6 +72,23 @@ const riverLayer = L.layerGroup();
 let roadsOn = false;
 let waterwaysOn = false;
 
+// Pont du Gard : repère patrimonial discret, sans étiquette permanente.
+const pontDuGard = L.marker([43.9472222, 4.5352778], {
+  icon: L.divIcon({
+    className: 'pont-du-gard-marker',
+    html: '<span style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;background:#fff;border:2px solid #9c2f27;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.18);font-size:16px;">🏛️</span>',
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+    popupAnchor: [0, -17]
+  }),
+  title: 'Pont du Gard',
+  zIndexOffset: 1200
+}).bindPopup(
+  '<strong>Pont du Gard</strong><br>' +
+  'Monument inscrit au patrimoine mondial de l’UNESCO.<br>' +
+  '<a href="https://pontdugard.fr/fr" target="_blank" rel="noopener noreferrer">Découvrir le site officiel</a>'
+).addTo(map);
+
 let currentBasemap = 'light';
 function setBasemap(mode) {
   currentBasemap = mode;
