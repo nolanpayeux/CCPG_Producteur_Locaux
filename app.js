@@ -352,10 +352,33 @@ function sitePopup(group) {
   const address = group.members.find(x=>x.f.properties.Adresse)?.f.properties.Adresse;
   return `<div class="site-popup"><h3>${esc(group.title)}</h3>${address?`<p>📍 ${esc(address)}</p>`:''}<p><strong>${group.categories.length} production${group.categories.length>1?'s':''}</strong></p><div class="site-categories">${categoriesHtml}</div></div>`;
 }
+// Zoom sur le site réel, jamais sur la position artificiellement décalée des pictogrammes.
+// On inclut les positions sources pour ne pas perdre les productions éloignées.
+function focusSite(group, popupContent) {
+  if (editorEnabled) return;
+  const positions = [group.position, ...group.members.map(x => x.originalLatLng)];
+  const targetBounds = L.latLngBounds(positions);
+  const maxZoom = group.members.length > 1 ? 16 : 17;
+  const targetZoom = Math.min(map.getBoundsZoom(targetBounds, false, L.point(70, 70)), maxZoom);
+  const zoomWillChange = targetZoom !== map.getZoom();
+
+  // Un changement de zoom reconstruit les marqueurs : rouvrir la fiche après le déplacement.
+  if (zoomWillChange) {
+    map.once('moveend', () => {
+      L.popup({autoPan:false, maxWidth:320})
+        .setLatLng(group.position)
+        .setContent(popupContent || sitePopup(group))
+        .openOn(map);
+    });
+  }
+  map.flyToBounds(targetBounds, {padding:[70,70],maxZoom,duration:1.2});
+}
+
 function siteMarker(group) {
   const marker = L.marker(group.position, {
     icon:siteIcon(group),title:group.title,autoPan:false
   }).bindPopup(()=>sitePopup(group),{autoPan:false});
+  marker.on('click', () => focusSite(group));
   return marker;
 }
 function drawSiteFan(groups,forEdition=false) {
@@ -381,12 +404,14 @@ function drawSiteFan(groups,forEdition=false) {
       radius:5, color:'#a93b30', weight:2, fillColor:'#ffffff',fillOpacity:1,interactive:true,
       title:group.title
     }).bindPopup(()=>sitePopup(group),{autoPan:false});
+    if (!forEdition) marker.on('click', () => focusSite(group));
     siteFanMarkers.addLayer(marker);
     // L'icône principale représente l'identité du site, pas une activité supplémentaire.
     const centerBadge=L.marker(group.position,{
       icon:L.divIcon({className:'site-anchor',html:`<span>${n}</span>`,iconSize:[25,25],iconAnchor:[12.5,12.5]}),
       autoPan:false,title:group.title
     }).bindPopup(()=>sitePopup(group),{autoPan:false});
+    if (!forEdition) centerBadge.on('click', () => focusSite(group));
     siteFanMarkers.addLayer(centerBadge);
     itemsToRender.forEach(({category,items}, i) => {
       const angle = -Math.PI/2 + (2*Math.PI*i/n);
@@ -398,6 +423,8 @@ function drawSiteFan(groups,forEdition=false) {
       if(forEdition){
         marker.off('click');
         marker.on('click',()=>{marker.closePopup();editFeature(feature);});
+      } else {
+        marker.on('click', () => focusSite(group, items.map(x => popup(x.f)).join('<hr class="site-separator">')));
       }
       siteFanMarkers.addLayer(marker);
       // Trait court et discret vers le site, et non vers une position décalée d'un autre producteur.
@@ -446,16 +473,38 @@ function refresh() {
   refreshPrintDecorations();
 }
 
+// Revenir systématiquement à l'ensemble du territoire CCPG,
+// indépendamment du zoom et des producteurs actuellement filtrés.
 function reframe() {
-  const group = layer.getBounds();
-  if (group.isValid() && map.getZoom() < 13) {
-    map.fitBounds(group.pad(.15), { maxZoom: 13 });
-  } else if (territoryBounds) {
-    map.fitBounds(territoryBounds.pad(.03), { maxZoom: 12 });
-  } else if (boundsAll) {
-    map.fitBounds(boundsAll.pad(.12), { maxZoom: 13 });
+  const b = territoryBounds || boundsAll;
+  if (b && b.isValid()) {
+    map.flyToBounds(b.pad(territoryBounds ? 0.03 : 0.12), {
+      maxZoom: 12,
+      duration: 1.2
+    });
   }
 }
+
+// Bouton permanent sur la carte, sous les commandes + et -.
+const homeControl = L.Control.extend({
+  options: { position: 'topleft' },
+  onAdd() {
+    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+    const button = L.DomUtil.create('a', '', container);
+    button.href = '#';
+    button.title = 'Vue générale du territoire CCPG';
+    button.setAttribute('aria-label', 'Vue générale du territoire CCPG');
+    button.setAttribute('role', 'button');
+    button.textContent = '⌂';
+    button.style.cssText = 'width:30px;height:30px;line-height:30px;text-align:center;font-size:24px;font-weight:bold;background:#fff;color:#333;text-decoration:none;display:block;';
+    L.DomEvent.disableClickPropagation(container);
+    L.DomEvent.disableScrollPropagation(container);
+    L.DomEvent.on(button, 'click', L.DomEvent.stop);
+    L.DomEvent.on(button, 'click', reframe);
+    return container;
+  }
+});
+map.addControl(new homeControl());
 
 async function fetchJson(url) {
   const response = await fetch(url);
