@@ -901,7 +901,13 @@ function editFeature(f) {
   editForm.elements.namedItem('lon').value = f.geometry.coordinates[0];
   document.getElementById('edit-delete').hidden = !features.includes(f);
   refreshGroupControls();
-  document.getElementById('edit-site').value=siteId(f);
+  // Présélectionner le groupe courant, même s'il a été créé automatiquement.
+  const groups = allSiteGroups();
+  const index = groups.findIndex(g => g.members.some(x => x.f === f));
+  const current = index >= 0 ? groups[index] : null;
+  const membership = document.getElementById('edit-site');
+  membership.value = current ? (current.id || 'legacy:' + index) : '';
+  if (!membership.value && siteId(f)) membership.value = siteId(f);
   setStatus('Modification du producteur « ' + (f.properties.name || 'Sans nom') + ' ».');
 }
 function snapshot() { undoStack.push(structuredClone(features)); if (undoStack.length > 30) undoStack.shift(); }
@@ -984,14 +990,35 @@ editForm.addEventListener('submit', e => {
   for (const name of fieldsToEdit) p[name]=editForm.elements.namedItem(name).value.trim();
   p.icone=iconFor(p.categorie);
   const requestedSite=document.getElementById('edit-site').value;
-  if(requestedSite) {
-    const target=allSiteGroups().find(g=>g.id===requestedSite);
-    if(target){p.site_id=target.id;p.site_nom=target.title;p.site_lat=target.position.lat;p.site_lon=target.position.lng;}
-    else if(pendingGroup && pendingGroup.id===requestedSite){p.site_id=pendingGroup.id;p.site_nom=pendingGroup.name;p.site_lat=pendingGroup.position.lat;p.site_lon=pendingGroup.position.lng;}
+  if (requestedSite) {
+    const groups=allSiteGroups();
+    const target=requestedSite.startsWith('legacy:')
+      ? groups[Number(requestedSite.slice(7))]
+      : groups.find(g => g.id === requestedSite);
+    if (target) {
+      // Un groupe « auto » devient durable au premier rattachement.
+      // Tous ses membres reçoivent le même identifiant sans intervention de l'utilisateur.
+      const id=target.id || updateGroup(target,target.title,target.position);
+      p.site_id=id;
+      p.site_nom=target.title;
+      p.site_lat=target.position.lat;
+      p.site_lon=target.position.lng;
+    } else if (pendingGroup && pendingGroup.id===requestedSite) {
+      p.site_id=pendingGroup.id;
+      p.site_nom=pendingGroup.name;
+      p.site_lat=pendingGroup.position.lat;
+      p.site_lon=pendingGroup.position.lng;
+    } else {
+      setStatus('Groupe introuvable. Sélectionnez un groupe existant.');
+      undoStack.pop();
+      return;
+    }
   } else {
-    // Une fiche détachée doit rester indépendante même si son nom/adresse correspondent à un groupe automatique.
-    if (siteId(selectedFeature)) {p.site_id=nextSiteId();p.site_nom=p.name;p.site_lat=lat;p.site_lon=lon;}
-    else {delete p.site_id;delete p.site_nom;delete p.site_lat;delete p.site_lon;}
+    // « Aucun groupe » : empêcher un regroupement automatique ultérieur.
+    p.site_id=nextSiteId();
+    p.site_nom=p.name;
+    p.site_lat=lat;
+    p.site_lon=lon;
   }
   selectedFeature.geometry.coordinates=[lon,lat];
   if (!features.includes(selectedFeature)) features.push(selectedFeature);
@@ -1033,20 +1060,51 @@ function nextSiteId() {
   return id;
 }
 function groupKey(g) { return g.id || ('legacy:'+allSiteGroups().indexOf(g)); }
+// Recherche dans les groupes : aucun changement du fichier HTML nécessaire.
+function addGroupSearch(selectId, placeholder) {
+  const select=document.getElementById(selectId);
+  const search=document.createElement('input');
+  search.type='search';
+  search.autocomplete='off';
+  search.placeholder=placeholder;
+  search.setAttribute('aria-label',placeholder);
+  search.style.cssText='box-sizing:border-box;width:100%;padding:9px 11px;margin:7px 0;border:1px solid #c8c3be;border-radius:6px;font:inherit;';
+  select.parentNode.insertBefore(search,select);
+  search.addEventListener('input',refreshGroupControls);
+  return search;
+}
+const groupSearch=addGroupSearch('group-select','🔎 Rechercher un groupe à gérer…');
+const memberGroupSearch=addGroupSearch('edit-site','🔎 Rechercher un groupe pour ce producteur…');
+
 function refreshGroupControls() {
   const groups=allSiteGroups();
   const select=document.getElementById('group-select');
   const assign=document.getElementById('edit-site');
   const previous=select.value;
+  const chosenMembership=assign.value;
+  const groupQuery=normalizeSiteText(groupSearch.value);
+  const memberQuery=normalizeSiteText(memberGroupSearch.value);
+
   select.replaceChildren(new Option('— Choisir un groupe —',''));
-  assign.replaceChildren(new Option('Aucun rattachement explicite',''));
+  assign.replaceChildren(new Option('Aucun groupe (point indépendant)',''));
+
   groups.forEach((g,i)=>{
-    // Les groupes automatiques peuvent être convertis par le panneau de gestion.
-    select.add(new Option(`${g.title} (${g.members.length} fiche${g.members.length>1?'s':''})${g.id?'':' · auto'}`,g.id || 'legacy:'+i));
-    if(g.id) assign.add(new Option(g.title,g.id));
+    const value=g.id || 'legacy:'+i;
+    const label=`${g.title} (${g.members.length} fiche${g.members.length>1?'s':''})`;
+    // Toujours maintenir l'option sélectionnée pour éviter de la perdre pendant la recherche.
+    if (!groupQuery || normalizeSiteText(label).includes(groupQuery) || value===previous) {
+      select.add(new Option(label+(g.id?'':' · auto'),value));
+    }
+    // Tous les groupes, y compris les « auto », peuvent recevoir des producteurs.
+    if (!memberQuery || normalizeSiteText(label).includes(memberQuery) || value===chosenMembership) {
+      assign.add(new Option(label,value));
+    }
   });
-  if([...select.options].some(x=>x.value===previous))select.value=previous;
-  else select.value='';
+  if (pendingGroup && ![...assign.options].some(x=>x.value===pendingGroup.id)) {
+    assign.add(new Option(pendingGroup.name+' (nouveau groupe)',pendingGroup.id));
+  }
+  select.value=[...select.options].some(x=>x.value===previous)?previous:'';
+  assign.value=[...assign.options].some(x=>x.value===chosenMembership)?chosenMembership:'';
   currentGroupId=select.value;
   const g=resolveSelectedGroup();
   document.getElementById('group-details').hidden=!g;
