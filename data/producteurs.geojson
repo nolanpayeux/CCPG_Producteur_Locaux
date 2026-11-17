@@ -41,7 +41,12 @@
         "tel": "06.50.64.52.36",
         "description": "\nBienvenue dans notre ferme familiale \n\nFruits, Légumes, Vin\nOuverture : 17h-21h",
         "categorie": "Légumes et fruits",
-        "icone": "fruits_legumes"
+        "icone": "fruits_legumes",
+        "site_id": "site_mwkitlwt_wlgzv",
+        "site_nom": "Domaine Claudine Vigne et scea Rm et Ch Vigne",
+        "site_lat": 43.875758,
+        "site_lon": 4.600627,
+        "site_description": "☎ 06.50.64.52.36\n\nBienvenue dans notre ferme familiale\nFruits, Légumes, Vin\nOuverture : 17h-21h"
       }
     },
     {
@@ -79,7 +84,12 @@
         "description": "Fruits, Légumes, Vin\n\nAvril mai les weekends et juin juillet août tout les jours 8h 23h",
         "tel": "06..18.92.05.00",
         "categorie": "Légumes et fruits",
-        "icone": "fruits_legumes"
+        "icone": "fruits_legumes",
+        "site_id": "site_mwkin6zy_1hupt",
+        "site_nom": "La Cabanne",
+        "site_lat": 43.944422,
+        "site_lon": 4.570559,
+        "site_description": "☎ 06.18.92.05.00\n\nFruits, Légumes, Vin\nAvril mai les weekends et juin juillet août tout les jours 8h 23h"
       }
     },
     {
@@ -103,7 +113,7 @@
         "site_nom": "Le jardin de Langonil",
         "site_lat": 43.969801,
         "site_lon": 4.593197,
-        "site_description": ""
+        "site_description": "Légumes, Produits secs et conserves, Huile d'Olive\n100% Local\n17h-19h le vendredi uniquement\nAdresse : 3 chemin des Aires Saint Hilaire d’Ozilhan\nTel : 06.47.08.59.63 ou\ncathebrascharles09@gmail.com"
       }
     },
     {
@@ -123,7 +133,12 @@
         "liens": " www.moulin-mas-cardelle.fr",
         "description": "les mercredis de 16h à 19h et les samedis de 9h à 12h\n\nFruits, Légumes, Oeufs, Huile d'Olive, Vin, confitures, farine",
         "categorie": "Légumes et fruits",
-        "icone": "fruits_legumes"
+        "icone": "fruits_legumes",
+        "site_id": "site_mwkishf1_8fr4f",
+        "site_nom": "Les Jardins du Mas Cardelle",
+        "site_lat": 43.892712,
+        "site_lon": 4.674919,
+        "site_description": "☎ 0670019331\n\nles mercredis de 16h à 19h et les samedis de 9h à 12h\nFruits, Légumes, Oeufs, Huile d'Olive, Vin, confitures, farine"
       }
     },
     {
@@ -142,7 +157,12 @@
         "description": "Fruits, Légumes, Huile d'Olive\n\nNos produits sont en vente libre dans un distributeur automatique qui accepte les espèces et la carte bleue\n\nOuverture de 8h00 à 20h00",
         "Adresse": "L’île de Tamagnon 30390 Aramon",
         "categorie": "Légumes et fruits",
-        "icone": "fruits_legumes"
+        "icone": "fruits_legumes",
+        "site_id": "site_mwkisxat_95yoc",
+        "site_nom": "Maison Tardieu",
+        "site_lat": 43.873489,
+        "site_lon": 4.644213,
+        "site_description": "☎ 06.16.31.22.63\n\nFruits, Légumes, Huile d'Olive\nNos produits sont en vente libre dans un distributeur automatique qui accepte les espèces et la carte bleue\nOuverture de 8h00 à 20h00"
       }
     },
     {
@@ -258,7 +278,12 @@
         "liens": "caveausho@vigneronsproprietesassocies.fr",
         "tel": "04.66.37.67.44",
         "categorie": "Huiles d'olives",
-        "icone": "huile_olive"
+        "icone": "huile_olive",
+        "site_id": "site_mwkira0l_1lprk",
+        "site_nom": "Caveau les vignerons de Saint-Hilaire d'Ozilhan",
+        "site_lat": 43.95475,
+        "site_lon": 4.569433,
+        "site_description": "☎ 04.66.37.67.44\n\nLe caveau se trouve à proximité du pont du Gard. Vous y trouverez des Côtes du Rhône, Côtes du Rhône villages et vin de pays, huile d'olive. N'hésitez surtout pas à vous y arrêter. C'est un endroit magnifique et chaleureux.\nHoraires d'ouverture : 9h00-12h00 14h30-18h30"
       }
     },
     {
@@ -357,7 +382,7 @@
         "site_nom": "Le jardin de Langonil",
         "site_lat": 43.969801,
         "site_lon": 4.593197,
-        "site_description": ""
+        "site_description": "Légumes, Produits secs et conserves, Huile d'Olive\n100% Local\n17h-19h le vendredi uniquement\nAdresse : 3 chemin des Aires Saint Hilaire d’Ozilhan\nTel : 06.47.08.59.63 ou\ncathebrascharles09@gmail.com"
       }
     },
     {
@@ -376,7 +401,12 @@
         "codeco": "30012",
         "liens": "www.moulin-mas-cardelle.fr",
         "categorie": "Huiles d'olives",
-        "icone": "huile_olive"
+        "icone": "huile_olive",
+        "site_id": "site_mwkishf1_8fr4f",
+        "site_nom": "Les Jardins du Mas Cardelle",
+        "site_lat": 43.892712,
+        "site_lon": 4.674919,
+        "site_description": "☎ 0670019331\n\nles mercredis de 16h à 19h et les samedis de 9h à 12h\nFruits, Légumes, Oeufs, Huile d'Olive, Vin, confitures, farine"
       }
     },
     {
@@ -395,7 +425,12 @@
         "liens": "aurelie.tardieu30@orange.fr",
         "tel": "06.16.31.22.63",
         "categorie": "Huiles d'olives",
-        "icone": "huile_olive"
+        "icone": "huile_olive",
+        "site_id": "site_mwkisxat_95yoc",
+        "site_nom": "Maison Tardieu",
+        "site_lat": 43.873489,
+        "site_lon": 4.644213,
+        "site_description": "☎ 06.16.31.22.63\n\nFruits, Légumes, Huile d'Olive\nNos produits sont en vente libre dans un distributeur automatique qui accepte les espèces et la carte bleue\nOuverture de 8h00 à 20h00"
       }
     },
     {
@@ -581,7 +616,13 @@
         "codeco": "166",
         "nom": "EARL Manade di Amista",
         "categorie": "Boucheries",
-        "icone": "boucheries"
+        "icone": "boucheries",
+        "tel": "",
+        "site_id": "site_mwkjb9nu_aef0u",
+        "site_nom": "Meynes, élevage bovin",
+        "site_lat": 43.869111,
+        "site_lon": 4.549541,
+        "site_description": ""
       }
     },
     {
@@ -716,7 +757,12 @@
         "liens": "poulonj@yahoo.fr",
         "codeco": "346",
         "categorie": "Vin",
-        "icone": "vin"
+        "icone": "vin",
+        "site_id": "site_mwkiof32_x2tqv",
+        "site_nom": "Domaine Bégude Poulon",
+        "site_lat": 43.960179,
+        "site_lon": 4.518718,
+        "site_description": "Domaine Bégude Poulon\nVente en direct de 15h à 18h30 ou sur rendez-vous\nVins de pays, huile d'olive, légumes secs, fourrages, céréales, fruits et jus. Cette ferme fournit du blé à la filière Raspaillou, le pain bio local."
       }
     },
     {
@@ -760,7 +806,12 @@
         "codeco": "30260",
         "tel": "06.24.91.31.30",
         "categorie": "Vin",
-        "icone": "vin"
+        "icone": "vin",
+        "site_id": "site_mwkip1qt_ewk55",
+        "site_nom": "Domaine d'Eujies",
+        "site_lat": 43.971507,
+        "site_lon": 4.588712,
+        "site_description": "☎ 06.24.91.31.30\n\nVignerons Indépendants en Côtes du Rhône, nous vous accueillons sur rendez-vous à la cave\nVente de fruits issus de l'exploitation ainsi que des produits du terroir ( légumes, oeufs, miel, jus de fruits, viande, fromages, pain artisanal, vins...)\nOuvert de 9h30 12h / 14h30 18h30 du mardi au samedi"
       }
     },
     {
@@ -801,7 +852,12 @@
         "codeco": "207",
         "comm": "Saint hilaire d'Ozilhan",
         "categorie": "Vin",
-        "icone": "vin"
+        "icone": "vin",
+        "site_id": "site_mwkiq46m_qadvd",
+        "site_nom": "Domaine Rouge Garance",
+        "site_lat": 43.966442,
+        "site_lon": 4.58868,
+        "site_description": "☎ 04.66.01.66.45\n\nVin : AB\nLe Domaine a été créé en 1997 sur une surface de 30 ha en AB depuis plus de 15 ans sur 3 appellations IGP Côteaux du Pont du Gard et Côtes du Rhône et CDR Villages\nHoraires d'ouverture, tous les jours sauf le dimanche et jours fériés de 9h à 12h00 et de 14h à 17h30\nen Juillet/Août : 9h à 12h et 14h30 à 18h00"
       }
     },
     {
@@ -932,7 +988,12 @@
         "Adresse": "Rond point de larnede route de Bagnols 30210 Remoulins ",
         "codeco": "30",
         "categorie": "Vin",
-        "icone": "vin"
+        "icone": "vin",
+        "site_id": "site_mwkin6zy_1hupt",
+        "site_nom": "La Cabanne",
+        "site_lat": 43.944422,
+        "site_lon": 4.570559,
+        "site_description": "☎ 06.18.92.05.00\n\nFruits, Légumes, Vin\nAvril mai les weekends et juin juillet août tout les jours 8h 23h"
       }
     },
     {
@@ -953,7 +1014,12 @@
         "liens": "caveremoulinsfournes@orange.fr",
         "comm": "212",
         "categorie": "Vin",
-        "icone": "vin"
+        "icone": "vin",
+        "site_id": "site_mwkins5a_h69t4",
+        "site_nom": "Les Vignerons Remoulins Fournès",
+        "site_lat": 43.938914,
+        "site_lon": 4.571342,
+        "site_description": "☎ 0466371451\n\nVin - Label HVE\nVenez découvrir des vins de caractères, produits de notre terroir et issus d'une vinification artisanale\nHoraire d'ouverture : 9h à 12h , 14h00 à 17h30"
       }
     },
     {
@@ -976,7 +1042,12 @@
         "comm": "Vente en ligne, ouvert",
         "description": "Vin biologique Ab et Demeter \n\nProduction de Vins Bio  blanc rouge rosé appellation costières de Nîmes et IGP coteaux du pont du Gard \n\nfanette@domainegalus.fr\n\nOuverture : 10h midi 16h 18h30 ou sur rdv ",
         "categorie": "Vin",
-        "icone": "vin"
+        "icone": "vin",
+        "site_id": "site_mwkiubtp_cpf2h",
+        "site_nom": "Meynes, Domaine Galus",
+        "site_lat": 43.858026,
+        "site_lon": 4.531785,
+        "site_description": "☎ 0621158583\n\nVin biologique Ab et Demeter\nProduction de Vins Bio blanc rouge rosé appellation costières de Nîmes et IGP coteaux du pont du Gard\nfanette@domainegalus.fr\nOuverture : 10h midi 16h 18h30 ou sur rdv"
       }
     },
     {
@@ -1120,7 +1191,12 @@
         "codeco": "30012",
         "liens": "www.moulin-mas-cardelle.fr",
         "categorie": "Oeufs",
-        "icone": "oeufs"
+        "icone": "oeufs",
+        "site_id": "site_mwkishf1_8fr4f",
+        "site_nom": "Les Jardins du Mas Cardelle",
+        "site_lat": 43.892712,
+        "site_lon": 4.674919,
+        "site_description": "☎ 0670019331\n\nles mercredis de 16h à 19h et les samedis de 9h à 12h\nFruits, Légumes, Oeufs, Huile d'Olive, Vin, confitures, farine"
       },
       "geometry": {
         "type": "Point",
@@ -1164,7 +1240,7 @@
         "site_nom": "Le jardin de Langonil",
         "site_lat": 43.969801,
         "site_lon": 4.593197,
-        "site_description": ""
+        "site_description": "Légumes, Produits secs et conserves, Huile d'Olive\n100% Local\n17h-19h le vendredi uniquement\nAdresse : 3 chemin des Aires Saint Hilaire d’Ozilhan\nTel : 06.47.08.59.63 ou\ncathebrascharles09@gmail.com"
       },
       "geometry": {
         "type": "Point",
@@ -1478,7 +1554,12 @@
         "name": "caveau les vignerons de Saint-Hilaire d'Ozilhan",
         "Adresse": " Les Croisées Chemin de Croix de Fenoullère, 30210 Castillon-du-Gard",
         "categorie": "Vin Bio",
-        "icone": "vin_bio"
+        "icone": "vin_bio",
+        "site_id": "site_mwkira0l_1lprk",
+        "site_nom": "Caveau les vignerons de Saint-Hilaire d'Ozilhan",
+        "site_lat": 43.95475,
+        "site_lon": 4.569433,
+        "site_description": "☎ 04.66.37.67.44\n\nLe caveau se trouve à proximité du pont du Gard. Vous y trouverez des Côtes du Rhône, Côtes du Rhône villages et vin de pays, huile d'olive. N'hésitez surtout pas à vous y arrêter. C'est un endroit magnifique et chaleureux.\nHoraires d'ouverture : 9h00-12h00 14h30-18h30"
       }
     },
     {
@@ -1519,7 +1600,12 @@
         "liens": "poulonj@yahoo.fr",
         "codeco": "346",
         "categorie": "Vin Bio",
-        "icone": "vin_bio"
+        "icone": "vin_bio",
+        "site_id": "site_mwkiof32_x2tqv",
+        "site_nom": "Domaine Bégude Poulon",
+        "site_lat": 43.960179,
+        "site_lon": 4.518718,
+        "site_description": "Domaine Bégude Poulon\nVente en direct de 15h à 18h30 ou sur rendez-vous\nVins de pays, huile d'olive, légumes secs, fourrages, céréales, fruits et jus. Cette ferme fournit du blé à la filière Raspaillou, le pain bio local."
       }
     },
     {
@@ -1539,7 +1625,12 @@
         "tel": "06.50.64.52.36",
         "name": "Domaine Claudine Vigne et scea Rm et Ch Vigne ",
         "categorie": "Vin Bio",
-        "icone": "vin_bio"
+        "icone": "vin_bio",
+        "site_id": "site_mwkitlwt_wlgzv",
+        "site_nom": "Domaine Claudine Vigne et scea Rm et Ch Vigne",
+        "site_lat": 43.875758,
+        "site_lon": 4.600627,
+        "site_description": "☎ 06.50.64.52.36\n\nBienvenue dans notre ferme familiale\nFruits, Légumes, Vin\nOuverture : 17h-21h"
       }
     },
     {
@@ -1583,7 +1674,12 @@
         "codeco": "30260",
         "tel": "06.24.91.31.30",
         "categorie": "Vin Bio",
-        "icone": "vin_bio"
+        "icone": "vin_bio",
+        "site_id": "site_mwkip1qt_ewk55",
+        "site_nom": "Domaine d'Eujies",
+        "site_lat": 43.971507,
+        "site_lon": 4.588712,
+        "site_description": "☎ 06.24.91.31.30\n\nVignerons Indépendants en Côtes du Rhône, nous vous accueillons sur rendez-vous à la cave\nVente de fruits issus de l'exploitation ainsi que des produits du terroir ( légumes, oeufs, miel, jus de fruits, viande, fromages, pain artisanal, vins...)\nOuvert de 9h30 12h / 14h30 18h30 du mardi au samedi"
       }
     },
     {
@@ -1605,7 +1701,12 @@
         "codeco": "207",
         "comm": "Saint hilaire d'Ozilhan",
         "categorie": "Vin Bio",
-        "icone": "vin_bio"
+        "icone": "vin_bio",
+        "site_id": "site_mwkiq46m_qadvd",
+        "site_nom": "Domaine Rouge Garance",
+        "site_lat": 43.966442,
+        "site_lon": 4.58868,
+        "site_description": "☎ 04.66.01.66.45\n\nVin : AB\nLe Domaine a été créé en 1997 sur une surface de 30 ha en AB depuis plus de 15 ans sur 3 appellations IGP Côteaux du Pont du Gard et Côtes du Rhône et CDR Villages\nHoraires d'ouverture, tous les jours sauf le dimanche et jours fériés de 9h à 12h00 et de 14h à 17h30\nen Juillet/Août : 9h à 12h et 14h30 à 18h00"
       }
     },
     {
@@ -1754,7 +1855,12 @@
         "tel": "06.70.01.93.31",
         "name": "LES JARDINS DU MAS CARDELLE",
         "categorie": "Vin Bio",
-        "icone": "vin_bio"
+        "icone": "vin_bio",
+        "site_id": "site_mwkishf1_8fr4f",
+        "site_nom": "Les Jardins du Mas Cardelle",
+        "site_lat": 43.892712,
+        "site_lon": 4.674919,
+        "site_description": "☎ 0670019331\n\nles mercredis de 16h à 19h et les samedis de 9h à 12h\nFruits, Légumes, Oeufs, Huile d'Olive, Vin, confitures, farine"
       }
     },
     {
@@ -1775,7 +1881,12 @@
         "liens": "caveremoulinsfournes@orange.fr",
         "comm": "212",
         "categorie": "Vin Bio",
-        "icone": "vin_bio"
+        "icone": "vin_bio",
+        "site_id": "site_mwkins5a_h69t4",
+        "site_nom": "Les Vignerons Remoulins Fournès",
+        "site_lat": 43.938914,
+        "site_lon": 4.571342,
+        "site_description": "☎ 0466371451\n\nVin - Label HVE\nVenez découvrir des vins de caractères, produits de notre terroir et issus d'une vinification artisanale\nHoraire d'ouverture : 9h à 12h , 14h00 à 17h30"
       }
     },
     {
@@ -1893,7 +2004,12 @@
         "codeco": "30166",
         "comm": "Vente en ligne, ouvert",
         "categorie": "Vin Bio",
-        "icone": "vin_bio"
+        "icone": "vin_bio",
+        "site_id": "site_mwkiubtp_cpf2h",
+        "site_nom": "Meynes, Domaine Galus",
+        "site_lat": 43.858026,
+        "site_lon": 4.531785,
+        "site_description": "☎ 0621158583\n\nVin biologique Ab et Demeter\nProduction de Vins Bio blanc rouge rosé appellation costières de Nîmes et IGP coteaux du pont du Gard\nfanette@domainegalus.fr\nOuverture : 10h midi 16h 18h30 ou sur rdv"
       }
     },
     {
