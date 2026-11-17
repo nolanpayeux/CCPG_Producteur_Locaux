@@ -337,6 +337,7 @@ function getSiteGroups(entries) {
     })[0];
     group.position = groupCenter(group) || medoid.originalLatLng;
     if (group.id) group.name=normalizeSiteText(group.members[0].f.properties.site_nom || group.members[0].f.properties.name);
+    group.description = group.members.map(x => String(x.f.properties.site_description || '').trim()).find(Boolean) || '';
     group.categories = [...new Set(group.members.map(x => x.f.properties.categorie))];
     group.title = (group.id ? group.members.find(x=>x.f.properties.site_nom)?.f.properties.site_nom : '') || group.members.find(x=>normalizeSiteText(x.f.properties.name)===group.name)?.f.properties.name || medoid.f.properties.name || 'Producteur local';
   }
@@ -357,34 +358,36 @@ function sitePopup(group) {
     return `<span class="site-category"><img src="${imagePath(iconFor(c))}" alt="">${esc(category?.name||c)}</span>`;
   }).join('');
   const address = group.members.find(x=>x.f.properties.Adresse)?.f.properties.Adresse;
-  return `<div class="site-popup"><h3>${esc(group.title)}</h3>${address?`<p>📍 ${esc(address)}</p>`:''}<p><strong>${group.categories.length} production${group.categories.length>1?'s':''}</strong></p><div class="site-categories">${categoriesHtml}</div></div>`;
+  const siteDescription = esc(readableDescription(group.description)).replace(/\n/g, '<br>');
+  return `<div class="site-popup"><h3>${esc(group.title)}</h3>${address?`<p>📍 ${esc(address)}</p>`:''}${siteDescription?`<p>${siteDescription}</p>`:''}<p><strong>${group.categories.length} production${group.categories.length>1?'s':''}</strong></p><div class="site-categories">${categoriesHtml}</div></div>`;
 }
 // Zoom sur le site réel, jamais sur la position artificiellement décalée des pictogrammes.
 // On inclut les positions sources pour ne pas perdre les productions éloignées.
 function focusSite(group, popupContent) {
   if (editorEnabled) return;
+
   const positions = [group.position, ...group.members.map(x => x.originalLatLng)];
   const targetBounds = L.latLngBounds(positions);
   const maxZoom = group.members.length > 1 ? 16 : 17;
-  const targetZoom = Math.min(map.getBoundsZoom(targetBounds, false, L.point(70, 70)), maxZoom);
-  const zoomWillChange = targetZoom !== map.getZoom();
 
-  // Un changement de zoom reconstruit les marqueurs : rouvrir la fiche après le déplacement.
-  if (zoomWillChange) {
-    map.once('moveend', () => {
-      L.popup({autoPan:false, maxWidth:320})
-        .setLatLng(group.position)
-        .setContent(popupContent || sitePopup(group))
-        .openOn(map);
-    });
-  }
-  map.flyToBounds(targetBounds, {padding:[70,70],maxZoom,duration:1.2});
+  // Cette fiche est liee a la carte, PAS au marqueur : refresh() peut ainsi
+  // reconstruire les pictogrammes apres le zoom sans fermer la fiche.
+  L.popup({ autoPan: false, maxWidth: 320, closeButton: true })
+    .setLatLng(group.position)
+    .setContent(popupContent || sitePopup(group))
+    .openOn(map);
+
+  map.flyToBounds(targetBounds, {
+    padding: [70, 70],
+    maxZoom,
+    duration: 1.2
+  });
 }
 
 function siteMarker(group) {
   const marker = L.marker(group.position, {
     icon:siteIcon(group),title:group.title,autoPan:false
-  }).bindPopup(()=>sitePopup(group),{autoPan:false});
+  });
   marker.on('click', () => focusSite(group));
   return marker;
 }
@@ -410,14 +413,14 @@ function drawSiteFan(groups,forEdition=false) {
     const marker = L.circleMarker(group.position, {
       radius:5, color:'#a93b30', weight:2, fillColor:'#ffffff',fillOpacity:1,interactive:true,
       title:group.title
-    }).bindPopup(()=>sitePopup(group),{autoPan:false});
+    });
     if (!forEdition) marker.on('click', () => focusSite(group));
     siteFanMarkers.addLayer(marker);
     // L'icône principale représente l'identité du site, pas une activité supplémentaire.
     const centerBadge=L.marker(group.position,{
       icon:L.divIcon({className:'site-anchor',html:`<span>${n}</span>`,iconSize:[25,25],iconAnchor:[12.5,12.5]}),
       autoPan:false,title:group.title
-    }).bindPopup(()=>sitePopup(group),{autoPan:false});
+    });
     if (!forEdition) centerBadge.on('click', () => focusSite(group));
     siteFanMarkers.addLayer(centerBadge);
     itemsToRender.forEach(({category,items}, i) => {
@@ -425,11 +428,10 @@ function drawSiteFan(groups,forEdition=false) {
       const target = map.layerPointToLatLng(L.point(center.x + radius*Math.cos(angle), center.y + radius*Math.sin(angle)));
       // Garder les fiches distinctes même si plusieurs lignes sources ont la même catégorie.
       const feature = items[0].f;
-      const marker=L.marker(target, {icon:iconForFeature(feature),title:`${group.title} — ${category}`,autoPan:false})
-        .bindPopup(()=>items.map(x=>popup(x.f)).join('<hr class="site-separator">'),{autoPan:false});
+      const marker=L.marker(target, {icon:iconForFeature(feature),title:`${group.title} — ${category}`,autoPan:false});
       if(forEdition){
         marker.off('click');
-        marker.on('click',()=>{marker.closePopup();editFeature(feature);});
+        marker.on('click',()=>editFeature(feature));
       } else {
         marker.on('click', () => focusSite(group, items.map(x => popup(x.f)).join('<hr class="site-separator">')));
       }
@@ -1003,6 +1005,7 @@ editForm.addEventListener('submit', e => {
       p.site_nom=target.title;
       p.site_lat=target.position.lat;
       p.site_lon=target.position.lng;
+      p.site_description=target.description || '';
     } else if (pendingGroup && pendingGroup.id===requestedSite) {
       p.site_id=pendingGroup.id;
       p.site_nom=pendingGroup.name;
@@ -1019,6 +1022,7 @@ editForm.addEventListener('submit', e => {
     p.site_nom=p.name;
     p.site_lat=lat;
     p.site_lon=lon;
+    delete p.site_description;
   }
   selectedFeature.geometry.coordinates=[lon,lat];
   if (!features.includes(selectedFeature)) features.push(selectedFeature);
@@ -1076,6 +1080,22 @@ function addGroupSearch(selectId, placeholder) {
 const groupSearch=addGroupSearch('group-select','🔎 Rechercher un groupe à gérer…');
 const memberGroupSearch=addGroupSearch('edit-site','🔎 Rechercher un groupe pour ce producteur…');
 
+// Description libre du domaine, distincte de la description de chaque production.
+// Champ ajouté directement au panneau existant : index.html et style.css inchangés.
+const groupDescriptionLabel = document.createElement('label');
+groupDescriptionLabel.textContent = 'Description du domaine';
+groupDescriptionLabel.htmlFor = 'group-description';
+const groupDescriptionField = document.createElement('textarea');
+groupDescriptionField.id = 'group-description';
+groupDescriptionField.rows = 4;
+groupDescriptionField.maxLength = 2000;
+groupDescriptionField.placeholder = 'Présentez le domaine, son histoire, ses activités ou son accueil du public…';
+groupDescriptionField.style.cssText = 'box-sizing:border-box;width:100%;min-height:95px;padding:9px 11px;margin:6px 0 12px;border:1px solid #c8c3be;border-radius:6px;font:inherit;resize:vertical;';
+const groupCoordinates = document.querySelector('#group-details .edit-coords');
+const groupDetails = document.getElementById('group-details');
+groupDetails.insertBefore(groupDescriptionLabel, groupCoordinates || groupDetails.firstChild);
+groupDetails.insertBefore(groupDescriptionField, groupCoordinates || groupDetails.firstChild);
+
 function refreshGroupControls() {
   const groups=allSiteGroups();
   const select=document.getElementById('group-select');
@@ -1110,6 +1130,7 @@ function refreshGroupControls() {
   document.getElementById('group-details').hidden=!g;
   if(g){
     document.getElementById('group-name').value=g.title;
+    groupDescriptionField.value=g.description || '';
     document.getElementById('group-lat').value=g.position.lat.toFixed(7);
     document.getElementById('group-lon').value=g.position.lng.toFixed(7);
     document.getElementById('group-members').textContent=g.members.map(m=>m.f.properties.name+' — '+m.f.properties.categorie).join(' · ');
@@ -1121,11 +1142,12 @@ function resolveSelectedGroup() {
   if(val.startsWith('legacy:'))return gs[Number(val.split(':')[1])]||null;
   return gs.find(g=>g.id===val)||null;
 }
-function updateGroup(g, name, position){
+function updateGroup(g, name, position, description = g.description || ''){
   const id=g.id||nextSiteId();
   for(const x of g.members){
     const p=x.f.properties;
     p.site_id=id;p.site_nom=name;p.site_lat=position.lat;p.site_lon=position.lng;
+    p.site_description=description;
   }
   return id;
 }
@@ -1152,7 +1174,8 @@ document.getElementById('group-save').onclick=()=>{
   const name=document.getElementById('group-name').value.trim();
   const lat=Number(document.getElementById('group-lat').value),lon=Number(document.getElementById('group-lon').value);
   if(!name||!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){setStatus('Nom ou coordonnées du groupe invalides.');return;}
-  snapshot();const id=updateGroup(g,name,L.latLng(lat,lon));
+  const description=groupDescriptionField.value.trim();
+  snapshot();const id=updateGroup(g,name,L.latLng(lat,lon),description);
   refreshEditionData();document.getElementById('group-select').value=id;refreshGroupControls();
   setStatus('Groupe enregistré. Exportez le GeoJSON pour conserver les modifications.');
   showLocalSaveNotice();
@@ -1162,7 +1185,7 @@ document.getElementById('group-dissolve').onclick=()=>{
   if(!confirm('Dissoudre « '+g.title+' » ? Les fiches seront conservées.'))return;
   snapshot();
   for(const x of g.members){
-    const p=x.f.properties;delete p.site_id;delete p.site_nom;delete p.site_lat;delete p.site_lon;
+    const p=x.f.properties;delete p.site_id;delete p.site_nom;delete p.site_lat;delete p.site_lon;delete p.site_description;
   }
   // Empêche la reconstitution automatique du groupe historique via un identifiant explicite unique par fiche.
   for(const x of g.members){ const p=x.f.properties; p.site_id=nextSiteId();p.site_nom=p.name; p.site_lat=x.f.geometry.coordinates[1];p.site_lon=x.f.geometry.coordinates[0]; }
