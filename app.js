@@ -4,7 +4,7 @@ const categories = [
   { key: "Huiles d'olives", icon: 'huile_olive', name: "Huile d’olive" },
   { key: 'Marché local', icon: 'marche_local', name: 'Marché local' },
   { key: 'Légumes et fruits', icon: 'fruits_legumes', name: 'Fruits et légumes' },
-  { key: 'Boucheries', icon: 'boucheries', name: 'Boucheries' },
+  { key: 'Boucheries', icon: 'boucheries', name: 'Élevage' },
   { key: 'Oeufs', icon: 'oeufs', name: 'Œufs' },
   { key: 'Fromagerie', icon: 'fromagerie', name: 'Fromagerie' },
   { key: 'Conserves', icon: 'conserves', name: 'Conserves' },
