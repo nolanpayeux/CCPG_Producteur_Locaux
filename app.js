@@ -140,6 +140,12 @@ const iconFor = key => categories.find(c => c.key === key)?.icon || 'fruits_legu
 const imagePath = slug => 'assets/icons/' + slug + '.png';
 function iconSize() {
   const z = map.getZoom();
+  return z <= 11 ? 34 : z <= 13 ? 42 : z <= 15 ? 50 : z <= 17 ? 58 : 66;
+}
+
+// Taille des marqueurs de regroupement inchangée.
+function groupIconSize() {
+  const z = map.getZoom();
   return z <= 11 ? 26 : z <= 13 ? 32 : z <= 15 ? 40 : z <= 17 ? 47 : 54;
 }
 function iconForFeature(f) {
@@ -438,7 +444,7 @@ function getSiteGroups(entries) {
 }
 function siteIcon(group) {
   if (group.categories.length === 1) return iconForFeature(group.members[0].f);
-  const size = iconSize();
+  const size = groupIconSize();
   return L.divIcon({
     className: 'site-multi-marker',
     html: `<span class="site-multi-dot">${group.categories.length}</span>`,
