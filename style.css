@@ -229,3 +229,26 @@ h1 em{font-style:normal;color:var(--ccpg-green)}
 .heritage-marker{background:none;border:0;display:flex;align-items:center;gap:5px;white-space:nowrap;pointer-events:auto}
 .heritage-icon{display:grid;place-items:center;width:34px;height:34px;flex:none;border-radius:50%;border:2px solid white;background:#915328;color:#fff;font-size:22px;font-weight:800;box-shadow:0 2px 7px #38261966}
 .heritage-name{display:inline-block;background:#fffaf2ef;border:1px solid #ddc6b3;border-radius:7px;padding:5px 7px;color:#704425;font:700 12px 'DM Sans',sans-serif;box-shadow:0 2px 6px #38261933}
+
+/* V11.9 — Photos compactes dans les fiches Leaflet, sans toucher aux pictogrammes */
+.leaflet-popup-content .popup-photo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+  margin: 10px auto;
+}
+.leaflet-popup-content .popup-photo img {
+  display: block;
+  width: auto !important;
+  max-width: 100% !important;
+  max-height: 140px !important;
+  height: auto !important;
+  object-fit: contain;
+  border-radius: 8px;
+}
+@media (max-width: 600px) {
+  .leaflet-popup-content .popup-photo img {
+    max-height: 110px !important;
+  }
+}
