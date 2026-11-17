@@ -171,26 +171,85 @@ function contactLinks(value) {
   }
   return [...new Set(links)].join('');
 }
-// Nettoie uniquement la représentation HTML : le GeoJSON source reste intact.
-function readableDescription(raw) {
-  return String(raw ?? '')
-    // Images et pièces jointes intégrées par uMap (souvent des JPEG Base64 géants).
-    .replace(/\{\{\s*data:image\/[^\n]*?(?:\}\}|$)/gi, '')
-    .replace(/data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+/gi, '')
-    // Balises image uMap, avec URL distante et dimension optionnelle.
-    .replace(/\{\{\s*https?:\/\/[^}]+\}\}/gi, '')
-    .replace(/\{\{[^}]*\}\}/g, '')
-    .split('\n')
-    .map(line => line.trim())
-    .filter(Boolean)
-    .join('\n')
-    .trim();
+// Les descriptions peuvent contenir des images uMap {{URL}} / {{data:image/...}}
+// ou Markdown ![legende](URL). Ne jamais injecter le HTML source directement.
+function renderDescription(raw) {
+  const source = String(raw ?? '');
+  const imagePattern = /\{\{\s*(data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=\s]+|https?:\/\/[^}\n|\s]+)(?:\|[^}]*)?\s*\}\}|!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/gi;
+  let output = '';
+  let position = 0;
+  let match;
+  while ((match = imagePattern.exec(source)) !== null) {
+    output += esc(source.slice(position, match.index)).replace(/\n/g, '<br>');
+    const candidate = (match[1] || match[2]).replace(/\s+/g, '');
+    const remoteImage = /^https?:\/\//i.test(candidate);
+    const embeddedImage = /^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(candidate);
+    if (remoteImage || embeddedImage) {
+      output += `<div style="margin:10px 0"><img src="${esc(candidate)}" alt="Photographie du producteur ou du domaine" loading="lazy" style="display:block;width:100%;max-width:100%;height:auto;max-height:280px;object-fit:contain;border-radius:8px" referrerpolicy="no-referrer"></div>`;
+    }
+    position = imagePattern.lastIndex;
+  }
+  output += esc(source.slice(position)).replace(/\n/g, '<br>');
+  return output.trim();
 }
+function readableDescription(raw) {
+  // Pour le moteur de recherche uniquement : supprimer les images des textes indexés.
+  return String(raw ?? '').replace(/\{\{[\s\S]*?\}\}/g, ' ').replace(/!\[[^\]]*\]\([^)]*\)/g, ' ').trim();
+}
+
+// Ajout d'image locale : redimensionne avant intégration pour limiter le poids du GeoJSON.
+async function addPhotoToDescription(file, textarea) {
+  if (!file || !textarea) return;
+  if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) {
+    window.alert('Choisissez une image JPG, PNG, WebP ou GIF.');
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    window.alert('Cette photo dépasse 10 Mo. Réduisez-la avant de l’ajouter.');
+    return;
+  }
+  try {
+    const bitmap = await createImageBitmap(file);
+    const ratio = Math.min(1, 1000 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * ratio));
+    canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+    textarea.value += (textarea.value.trim() ? '\n' : '') + `{{${dataUrl}}}`;
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  } catch (err) {
+    console.error('Ajout photo impossible', err);
+    window.alert('Impossible de lire cette image. Essayez avec un fichier JPG ou PNG.');
+  }
+}
+function addPhotoInput(textarea, afterElement) {
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'margin:4px 0 12px';
+  const label = document.createElement('label');
+  label.textContent = '📷 Ajouter une photo à la description : ';
+  label.style.cssText = 'display:block;font-size:13px;margin-bottom:5px';
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/jpeg,image/png,image/webp,image/gif';
+  input.style.cssText = 'display:block;max-width:100%;font-size:13px';
+  input.addEventListener('change', async () => {
+    await addPhotoToDescription(input.files?.[0], textarea);
+    input.value = '';
+  });
+  wrapper.append(label, input);
+  afterElement.insertAdjacentElement('afterend', wrapper);
+}
+
 function popup(f) {
   const p = f.properties;
   const cat = categories.find(c => c.key === p.categorie);
   const contacts = contactLinks(p.liens ?? p.site_internet ?? p.website ?? p.url);
-  const desc = esc(readableDescription(p.description)).replace(/\n/g, '<br>');
+  const desc = renderDescription(p.description);
   return `<div class="popup-head"><img src="${imagePath(p.icone || iconFor(p.categorie))}" alt=""><div><h3>${esc(p.name || 'Producteur local')}</h3><small>${esc(cat?.name || p.categorie || 'Production locale')}</small></div></div><div class="popup-section">${p.Adresse ? `<p>📍 ${esc(p.Adresse)}</p>` : ''}${p.tel ? `<p>☎ ${esc(p.tel)}</p>` : ''}${desc ? `<p>${desc}</p>` : ''}${contacts}</div>`;
 }
 function initFilters() {
@@ -359,7 +418,7 @@ function sitePopup(group) {
   }).join('');
 
   const address = group.members.find(x => x.f.properties.Adresse)?.f.properties.Adresse;
-  const siteDescription = esc(readableDescription(group.description)).replace(/\n/g, '<br>');
+  const siteDescription = renderDescription(group.description);
 
   // Les coordonnées sont portées par les fiches des productions, pas par le groupe.
   // On les regroupe ici pour les rendre visibles dans la fiche du domaine.
@@ -896,6 +955,9 @@ const editForm = document.getElementById('edit-form');
 const editStatus = document.getElementById('edit-status');
 const editLaunch = document.getElementById('edit-launch');
 const fieldsToEdit = ['name','categorie','Adresse','tel','liens','description'];
+// Le champ image modifie la description locale, exportee ensuite dans le GeoJSON.
+const producerDescriptionField = editForm.elements.namedItem('description');
+addPhotoInput(producerDescriptionField, producerDescriptionField.closest('label'));
 const editCategory = document.getElementById('edit-category');
 for (const c of categories) editCategory.add(new Option(c.name, c.key));
 function setStatus(text) { editStatus.textContent = text; }
@@ -1109,13 +1171,14 @@ groupDescriptionLabel.htmlFor = 'group-description';
 const groupDescriptionField = document.createElement('textarea');
 groupDescriptionField.id = 'group-description';
 groupDescriptionField.rows = 4;
-groupDescriptionField.maxLength = 2000;
+groupDescriptionField.removeAttribute('maxlength'); // Photos encodees dans la description
 groupDescriptionField.placeholder = 'Présentez le domaine, son histoire, ses activités ou son accueil du public…';
 groupDescriptionField.style.cssText = 'box-sizing:border-box;width:100%;min-height:95px;padding:9px 11px;margin:6px 0 12px;border:1px solid #c8c3be;border-radius:6px;font:inherit;resize:vertical;';
 const groupCoordinates = document.querySelector('#group-details .edit-coords');
 const groupDetails = document.getElementById('group-details');
 groupDetails.insertBefore(groupDescriptionLabel, groupCoordinates || groupDetails.firstChild);
 groupDetails.insertBefore(groupDescriptionField, groupCoordinates || groupDetails.firstChild);
+addPhotoInput(groupDescriptionField, groupDescriptionField);
 
 function refreshGroupControls() {
   const groups=allSiteGroups();
