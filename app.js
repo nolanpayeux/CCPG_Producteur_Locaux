@@ -354,13 +354,34 @@ function siteIcon(group) {
 }
 function sitePopup(group) {
   const categoriesHtml = group.categories.map(c => {
-    const category=categories.find(x=>x.key===c);
-    return `<span class="site-category"><img src="${imagePath(iconFor(c))}" alt="">${esc(category?.name||c)}</span>`;
+    const category = categories.find(x => x.key === c);
+    return `<span class="site-category"><img src="${imagePath(iconFor(c))}" alt="">${esc(category?.name || c)}</span>`;
   }).join('');
-  const address = group.members.find(x=>x.f.properties.Adresse)?.f.properties.Adresse;
+
+  const address = group.members.find(x => x.f.properties.Adresse)?.f.properties.Adresse;
   const siteDescription = esc(readableDescription(group.description)).replace(/\n/g, '<br>');
-  return `<div class="site-popup"><h3>${esc(group.title)}</h3>${address?`<p>📍 ${esc(address)}</p>`:''}${siteDescription?`<p>${siteDescription}</p>`:''}<p><strong>${group.categories.length} production${group.categories.length>1?'s':''}</strong></p><div class="site-categories">${categoriesHtml}</div></div>`;
+
+  // Les coordonnées sont portées par les fiches des productions, pas par le groupe.
+  // On les regroupe ici pour les rendre visibles dans la fiche du domaine.
+  const phones = [...new Set(group.members
+    .map(x => String(x.f.properties.tel || '').trim())
+    .filter(Boolean))];
+  const contacts = [...new Set(group.members
+    .map(x => {
+      const p = x.f.properties;
+      return String(p.liens ?? p.site_internet ?? p.website ?? p.url ?? '').trim();
+    })
+    .filter(Boolean)
+    .flatMap(value => value.split(/[\n;,]+/).map(v => v.trim()).filter(Boolean)))];
+  const linksHtml = contacts.map(contactLinks).filter(Boolean).join('');
+  const phonesHtml = phones.map(phone => `<p>☎ ${esc(phone)}</p>`).join('');
+  const contactSection = phonesHtml || linksHtml
+    ? `<div class="popup-section"><p><strong>Site internet et contact</strong></p>${phonesHtml}${linksHtml}</div>`
+    : '';
+
+  return `<div class="site-popup"><h3>${esc(group.title)}</h3>${address ? `<p>📍 ${esc(address)}</p>` : ''}${siteDescription ? `<p>${siteDescription}</p>` : ''}<p><strong>${group.categories.length} production${group.categories.length > 1 ? 's' : ''}</strong></p><div class="site-categories">${categoriesHtml}</div>${contactSection}</div>`;
 }
+
 // Zoom sur le site réel, jamais sur la position artificiellement décalée des pictogrammes.
 // On inclut les positions sources pour ne pas perdre les productions éloignées.
 function focusSite(group, popupContent) {
