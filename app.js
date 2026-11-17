@@ -171,78 +171,110 @@ function contactLinks(value) {
   }
   return [...new Set(links)].join('');
 }
-// Les descriptions peuvent contenir des images uMap {{URL}} / {{data:image/...}}
-// ou Markdown ![legende](URL). Ne jamais injecter le HTML source directement.
-function renderDescription(raw) {
-  const source = String(raw ?? '');
-  const imagePattern = /\{\{\s*(data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=\s]+|https?:\/\/[^}\n|\s]+)(?:\|[^}]*)?\s*\}\}|!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/gi;
-  let output = '';
-  let position = 0;
-  let match;
-  while ((match = imagePattern.exec(source)) !== null) {
-    output += esc(source.slice(position, match.index)).replace(/\n/g, '<br>');
-    const candidate = (match[1] || match[2]).replace(/\s+/g, '');
-    const remoteImage = /^https?:\/\//i.test(candidate);
-    const embeddedImage = /^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(candidate);
-    if (remoteImage || embeddedImage) {
-      output += `<div style="margin:10px 0"><img src="${esc(candidate)}" alt="Photographie du producteur ou du domaine" loading="lazy" style="display:block;width:100%;max-width:100%;height:auto;max-height:280px;object-fit:contain;border-radius:8px" referrerpolicy="no-referrer"></div>`;
+// Les photos sont des propriétés GeoJSON séparées du texte descriptif.
+// Convertit les anciens ajouts uMap/base64 en une photo distincte.
+const LEGACY_PHOTO_PATTERN = /\{\{\s*(data:image\/(?:png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=\s]+|https?:\/\/[^}\n|\s]+)(?:\|[^}]*)?\s*\}\}|!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/gi;
+function safePhotoSource(value) {
+  const src = String(value || '').trim();
+  if (/^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(src)) return src;
+  if (/^https?:\/\/[^\s<>"']+$/i.test(src)) return src;
+  return '';
+}
+function removeLegacyImageCode(value) {
+  return String(value ?? '')
+    .replace(LEGACY_PHOTO_PATTERN, ' ')
+    // Ne jamais afficher les énormes chaînes base64 brutes, même mal encadrées.
+    .replace(/data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+/gi, ' ')
+    .replace(/\{\{[^}]*data:image[^}]*\}\}/gi, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+function normalizePhotoFields(p) {
+  if (!p) return;
+  for (const [descriptionKey, photoKey] of [['description','photo'], ['site_description','site_photo']]) {
+    const raw = String(p[descriptionKey] ?? '');
+    if (!safePhotoSource(p[photoKey])) {
+      const match = raw.match(LEGACY_PHOTO_PATTERN);
+      if (match) {
+        const first = match[0].match(/data:image\/(?:png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=\s]+|https?:\/\/[^}\n|\s)]+/i);
+        if (first) p[photoKey] = safePhotoSource(first[0].replace(/\s+/g, ''));
+      }
     }
-    position = imagePattern.lastIndex;
+    if (raw) p[descriptionKey] = removeLegacyImageCode(raw);
   }
-  output += esc(source.slice(position)).replace(/\n/g, '<br>');
-  return output.trim();
+}
+function renderDescription(raw) {
+  return esc(removeLegacyImageCode(raw)).replace(/\n/g, '<br>');
 }
 function readableDescription(raw) {
-  // Pour le moteur de recherche uniquement : supprimer les images des textes indexés.
-  return String(raw ?? '').replace(/\{\{[\s\S]*?\}\}/g, ' ').replace(/!\[[^\]]*\]\([^)]*\)/g, ' ').trim();
+  return removeLegacyImageCode(raw);
 }
-
-// Ajout d'image locale : redimensionne avant intégration pour limiter le poids du GeoJSON.
-async function addPhotoToDescription(file, textarea) {
-  if (!file || !textarea) return;
-  if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) {
-    window.alert('Choisissez une image JPG, PNG, WebP ou GIF.');
-    return;
-  }
-  if (file.size > 10 * 1024 * 1024) {
-    window.alert('Cette photo dépasse 10 Mo. Réduisez-la avant de l’ajouter.');
-    return;
-  }
+function photoHtml(src, alt) {
+  const safe = safePhotoSource(src);
+  if (!safe) return '';
+  return `<div class="popup-photo" style="margin:10px 0"><img src="${esc(safe)}" alt="${esc(alt)}" loading="lazy" style="display:block;width:100%;max-height:280px;object-fit:contain;border-radius:8px"></div>`;
+}
+// La photo sélectionnée n'est jamais insérée dans le champ Description.
+async function resizePhoto(file) {
+  if (!file) return null;
+  if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) throw new Error('Sélectionnez une photo JPG, PNG, WebP ou GIF.');
+  if (file.size > 10 * 1024 * 1024) throw new Error('Photo trop volumineuse (maximum 10 Mo).');
+  const bitmap = await createImageBitmap(file);
   try {
-    const bitmap = await createImageBitmap(file);
     const ratio = Math.min(1, 1000 / Math.max(bitmap.width, bitmap.height));
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(bitmap.width * ratio));
     canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
     const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Impossible de traiter cette image.');
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.72);
+  } finally {
     bitmap.close?.();
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
-    textarea.value += (textarea.value.trim() ? '\n' : '') + `{{${dataUrl}}}`;
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-  } catch (err) {
-    console.error('Ajout photo impossible', err);
-    window.alert('Impossible de lire cette image. Essayez avec un fichier JPG ou PNG.');
   }
 }
-function addPhotoInput(textarea, afterElement) {
-  const wrapper = document.createElement('div');
-  wrapper.style.cssText = 'margin:4px 0 12px';
-  const label = document.createElement('label');
-  label.textContent = '📷 Ajouter une photo à la description : ';
-  label.style.cssText = 'display:block;font-size:13px;margin-bottom:5px';
+function createPhotoEditor(afterElement, caption) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'margin:8px 0 14px';
+  const title = document.createElement('label');
+  title.textContent = caption;
+  title.style.cssText = 'display:block;font-size:13px;font-weight:600;margin-bottom:5px';
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/jpeg,image/png,image/webp,image/gif';
   input.style.cssText = 'display:block;max-width:100%;font-size:13px';
-  input.addEventListener('change', async () => {
-    await addPhotoToDescription(input.files?.[0], textarea);
+  const preview = document.createElement('img');
+  preview.alt = 'Aperçu de la photo';
+  preview.style.cssText = 'display:none;max-width:230px;max-height:150px;object-fit:contain;margin:8px 0;border-radius:7px';
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.textContent = 'Retirer la photo';
+  remove.style.cssText = 'display:none;margin:5px 0 0';
+  let photo = '';
+  function setPhoto(value) {
+    photo = safePhotoSource(value);
+    preview.style.display = photo ? 'block' : 'none';
+    remove.style.display = photo ? 'inline-block' : 'none';
+    preview.src = photo || '';
     input.value = '';
+  }
+  input.addEventListener('change', async () => {
+    try {
+      const next = await resizePhoto(input.files?.[0]);
+      if (next) setPhoto(next);
+    } catch (err) {
+      console.error(err);
+      window.alert(err.message || 'Image illisible. Essayez en JPG ou PNG.');
+      input.value = '';
+    }
   });
-  wrapper.append(label, input);
-  afterElement.insertAdjacentElement('afterend', wrapper);
+  remove.addEventListener('click', () => setPhoto(''));
+  wrap.append(title, input, preview, remove);
+  afterElement.insertAdjacentElement('afterend', wrap);
+  return { setPhoto, getPhoto: () => photo };
 }
 
 function popup(f) {
@@ -250,7 +282,8 @@ function popup(f) {
   const cat = categories.find(c => c.key === p.categorie);
   const contacts = contactLinks(p.liens ?? p.site_internet ?? p.website ?? p.url);
   const desc = renderDescription(p.description);
-  return `<div class="popup-head"><img src="${imagePath(p.icone || iconFor(p.categorie))}" alt=""><div><h3>${esc(p.name || 'Producteur local')}</h3><small>${esc(cat?.name || p.categorie || 'Production locale')}</small></div></div><div class="popup-section">${p.Adresse ? `<p>📍 ${esc(p.Adresse)}</p>` : ''}${p.tel ? `<p>☎ ${esc(p.tel)}</p>` : ''}${desc ? `<p>${desc}</p>` : ''}${contacts}</div>`;
+  const image = photoHtml(p.photo, 'Photographie du producteur');
+  return `<div class="popup-head"><img src="${imagePath(p.icone || iconFor(p.categorie))}" alt=""><div><h3>${esc(p.name || 'Producteur local')}</h3><small>${esc(cat?.name || p.categorie || 'Production locale')}</small></div></div><div class="popup-section">${p.Adresse ? `<p>📍 ${esc(p.Adresse)}</p>` : ''}${p.tel ? `<p>☎ ${esc(p.tel)}</p>` : ''}${image}${desc ? `<p>${desc}</p>` : ''}${contacts}</div>`;
 }
 function initFilters() {
   const wrap = document.getElementById('filters');
@@ -397,6 +430,7 @@ function getSiteGroups(entries) {
     group.position = groupCenter(group) || medoid.originalLatLng;
     if (group.id) group.name=normalizeSiteText(group.members[0].f.properties.site_nom || group.members[0].f.properties.name);
     group.description = group.members.map(x => String(x.f.properties.site_description || '').trim()).find(Boolean) || '';
+    group.photo = group.members.map(x => safePhotoSource(x.f.properties.site_photo)).find(Boolean) || '';
     group.categories = [...new Set(group.members.map(x => x.f.properties.categorie))];
     group.title = (group.id ? group.members.find(x=>x.f.properties.site_nom)?.f.properties.site_nom : '') || group.members.find(x=>normalizeSiteText(x.f.properties.name)===group.name)?.f.properties.name || medoid.f.properties.name || 'Producteur local';
   }
@@ -419,6 +453,7 @@ function sitePopup(group) {
 
   const address = group.members.find(x => x.f.properties.Adresse)?.f.properties.Adresse;
   const siteDescription = renderDescription(group.description);
+  const siteImage = photoHtml(group.photo, 'Photographie du domaine');
 
   // Les coordonnées sont portées par les fiches des productions, pas par le groupe.
   // On les regroupe ici pour les rendre visibles dans la fiche du domaine.
@@ -438,7 +473,7 @@ function sitePopup(group) {
     ? `<div class="popup-section"><p><strong>Site internet et contact</strong></p>${phonesHtml}${linksHtml}</div>`
     : '';
 
-  return `<div class="site-popup"><h3>${esc(group.title)}</h3>${address ? `<p>📍 ${esc(address)}</p>` : ''}${siteDescription ? `<p>${siteDescription}</p>` : ''}<p><strong>${group.categories.length} production${group.categories.length > 1 ? 's' : ''}</strong></p><div class="site-categories">${categoriesHtml}</div>${contactSection}</div>`;
+  return `<div class="site-popup"><h3>${esc(group.title)}</h3>${address ? `<p>📍 ${esc(address)}</p>` : ''}${siteImage}${siteDescription ? `<p>${siteDescription}</p>` : ''}<p><strong>${group.categories.length} production${group.categories.length > 1 ? 's' : ''}</strong></p><div class="site-categories">${categoriesHtml}</div>${contactSection}</div>`;
 }
 
 // Zoom sur le site réel, jamais sur la position artificiellement décalée des pictogrammes.
@@ -710,6 +745,7 @@ async function load() {
     const data = await response.json();
     originalGeoJson = structuredClone(data);
     features = data.features.filter(f => f?.geometry?.type === 'Point' && Array.isArray(f.geometry.coordinates));
+    features.forEach(f => normalizePhotoFields(f.properties));
     const samePositions = new Map();
     for (const f of features) {
       const key = f.geometry.coordinates.join(',');
@@ -955,9 +991,9 @@ const editForm = document.getElementById('edit-form');
 const editStatus = document.getElementById('edit-status');
 const editLaunch = document.getElementById('edit-launch');
 const fieldsToEdit = ['name','categorie','Adresse','tel','liens','description'];
-// Le champ image modifie la description locale, exportee ensuite dans le GeoJSON.
+// Photo autonome, enregistrée dans properties.photo (et non dans description).
 const producerDescriptionField = editForm.elements.namedItem('description');
-addPhotoInput(producerDescriptionField, producerDescriptionField.closest('label'));
+const producerPhotoEditor = createPhotoEditor(producerDescriptionField.closest('label'), '📷 Photo du producteur');
 const editCategory = document.getElementById('edit-category');
 for (const c of categories) editCategory.add(new Option(c.name, c.key));
 function setStatus(text) { editStatus.textContent = text; }
@@ -981,7 +1017,9 @@ function editFeature(f) {
   selectedFeature = f;
   editForm.hidden = false;
   locatingFeature = false;
+  normalizePhotoFields(f.properties);
   for (const name of fieldsToEdit) editForm.elements.namedItem(name).value = f.properties[name] ?? '';
+  producerPhotoEditor.setPhoto(f.properties.photo);
   editForm.elements.namedItem('lat').value = f.geometry.coordinates[1];
   editForm.elements.namedItem('lon').value = f.geometry.coordinates[0];
   document.getElementById('edit-delete').hidden = !features.includes(f);
@@ -1073,6 +1111,9 @@ editForm.addEventListener('submit', e => {
   snapshot();
   const p=selectedFeature.properties;
   for (const name of fieldsToEdit) p[name]=editForm.elements.namedItem(name).value.trim();
+  p.description = removeLegacyImageCode(p.description);
+  const producerImage = producerPhotoEditor.getPhoto();
+  if (producerImage) p.photo = producerImage; else delete p.photo;
   p.icone=iconFor(p.categorie);
   const requestedSite=document.getElementById('edit-site').value;
   if (requestedSite) {
@@ -1089,6 +1130,7 @@ editForm.addEventListener('submit', e => {
       p.site_lat=target.position.lat;
       p.site_lon=target.position.lng;
       p.site_description=target.description || '';
+      if (target.photo) p.site_photo=target.photo; else delete p.site_photo;
     } else if (pendingGroup && pendingGroup.id===requestedSite) {
       p.site_id=pendingGroup.id;
       p.site_nom=pendingGroup.name;
@@ -1106,6 +1148,7 @@ editForm.addEventListener('submit', e => {
     p.site_lat=lat;
     p.site_lon=lon;
     delete p.site_description;
+    delete p.site_photo;
   }
   selectedFeature.geometry.coordinates=[lon,lat];
   if (!features.includes(selectedFeature)) features.push(selectedFeature);
@@ -1171,14 +1214,15 @@ groupDescriptionLabel.htmlFor = 'group-description';
 const groupDescriptionField = document.createElement('textarea');
 groupDescriptionField.id = 'group-description';
 groupDescriptionField.rows = 4;
-groupDescriptionField.removeAttribute('maxlength'); // Photos encodees dans la description
+groupDescriptionField.removeAttribute('maxlength'); // Texte uniquement, photo distincte
 groupDescriptionField.placeholder = 'Présentez le domaine, son histoire, ses activités ou son accueil du public…';
 groupDescriptionField.style.cssText = 'box-sizing:border-box;width:100%;min-height:95px;padding:9px 11px;margin:6px 0 12px;border:1px solid #c8c3be;border-radius:6px;font:inherit;resize:vertical;';
 const groupCoordinates = document.querySelector('#group-details .edit-coords');
 const groupDetails = document.getElementById('group-details');
 groupDetails.insertBefore(groupDescriptionLabel, groupCoordinates || groupDetails.firstChild);
 groupDetails.insertBefore(groupDescriptionField, groupCoordinates || groupDetails.firstChild);
-addPhotoInput(groupDescriptionField, groupDescriptionField);
+const groupPhotoEditor = createPhotoEditor(groupDescriptionField, '📷 Photo du domaine');
+let displayedGroupPhotoKey = null;
 
 function refreshGroupControls() {
   const groups=allSiteGroups();
@@ -1211,6 +1255,12 @@ function refreshGroupControls() {
   assign.value=[...assign.options].some(x=>x.value===chosenMembership)?chosenMembership:'';
   currentGroupId=select.value;
   const g=resolveSelectedGroup();
+  // Ne pas écraser une photo en cours de choix pendant une recherche de groupes.
+  const photoKey = g ? select.value : '';
+  if (displayedGroupPhotoKey !== photoKey) {
+    groupPhotoEditor.setPhoto(g?.photo || '');
+    displayedGroupPhotoKey = photoKey;
+  }
   document.getElementById('group-details').hidden=!g;
   if(g){
     document.getElementById('group-name').value=g.title;
@@ -1226,12 +1276,13 @@ function resolveSelectedGroup() {
   if(val.startsWith('legacy:'))return gs[Number(val.split(':')[1])]||null;
   return gs.find(g=>g.id===val)||null;
 }
-function updateGroup(g, name, position, description = g.description || ''){
+function updateGroup(g, name, position, description = g.description || '', photo = g.photo || ''){
   const id=g.id||nextSiteId();
   for(const x of g.members){
     const p=x.f.properties;
     p.site_id=id;p.site_nom=name;p.site_lat=position.lat;p.site_lon=position.lng;
-    p.site_description=description;
+    p.site_description=removeLegacyImageCode(description);
+    if (photo) p.site_photo=photo; else delete p.site_photo;
   }
   return id;
 }
@@ -1259,7 +1310,9 @@ document.getElementById('group-save').onclick=()=>{
   const lat=Number(document.getElementById('group-lat').value),lon=Number(document.getElementById('group-lon').value);
   if(!name||!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){setStatus('Nom ou coordonnées du groupe invalides.');return;}
   const description=groupDescriptionField.value.trim();
-  snapshot();const id=updateGroup(g,name,L.latLng(lat,lon),description);
+  const sitePhoto = groupPhotoEditor.getPhoto();
+  snapshot();const id=updateGroup(g,name,L.latLng(lat,lon),description,sitePhoto);
+  displayedGroupPhotoKey=id;
   refreshEditionData();document.getElementById('group-select').value=id;refreshGroupControls();
   setStatus('Groupe enregistré. Exportez le GeoJSON pour conserver les modifications.');
   showLocalSaveNotice();
@@ -1269,7 +1322,7 @@ document.getElementById('group-dissolve').onclick=()=>{
   if(!confirm('Dissoudre « '+g.title+' » ? Les fiches seront conservées.'))return;
   snapshot();
   for(const x of g.members){
-    const p=x.f.properties;delete p.site_id;delete p.site_nom;delete p.site_lat;delete p.site_lon;delete p.site_description;
+    const p=x.f.properties;delete p.site_id;delete p.site_nom;delete p.site_lat;delete p.site_lon;delete p.site_description;delete p.site_photo;
   }
   // Empêche la reconstitution automatique du groupe historique via un identifiant explicite unique par fiche.
   for(const x of g.members){ const p=x.f.properties; p.site_id=nextSiteId();p.site_nom=p.name; p.site_lat=x.f.geometry.coordinates[1];p.site_lon=x.f.geometry.coordinates[0]; }
