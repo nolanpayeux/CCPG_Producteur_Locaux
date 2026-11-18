@@ -1360,3 +1360,26 @@ document.getElementById('group-dissolve').onclick=()=>{
   for(const x of g.members){ const p=x.f.properties; p.site_id=nextSiteId();p.site_nom=p.name; p.site_lat=x.f.geometry.coordinates[1];p.site_lon=x.f.geometry.coordinates[0]; }
   refreshEditionData();setStatus('Groupe dissous : chaque fiche forme désormais son propre site. Exportez le GeoJSON.');
 };
+
+// V12 — Masquer / réafficher le panneau de gauche sur ordinateur.
+// La carte Leaflet doit recalculer sa largeur après la transition CSS.
+const sidebarCollapseButton = document.getElementById('sidebar-collapse');
+if (sidebarCollapseButton) {
+  const sidebarToCollapse = document.getElementById('sidebar');
+  const appToCollapse = document.querySelector('.app');
+
+  sidebarCollapseButton.addEventListener('click', () => {
+    const collapsed = appToCollapse.classList.toggle('sidebar-collapsed');
+    const label = collapsed ? 'Afficher le panneau latéral' : 'Masquer le panneau latéral';
+    sidebarCollapseButton.textContent = collapsed ? '›' : '‹';
+    sidebarCollapseButton.title = label;
+    sidebarCollapseButton.setAttribute('aria-label', label);
+    sidebarCollapseButton.setAttribute('aria-expanded', String(!collapsed));
+    // Mise à jour immédiate, puis une autre à la fin de l'animation.
+    map.invalidateSize({ animate: false });
+  });
+
+  sidebarToCollapse.addEventListener('transitionend', event => {
+    if (event.propertyName === 'width') map.invalidateSize({ animate: false });
+  });
+}
