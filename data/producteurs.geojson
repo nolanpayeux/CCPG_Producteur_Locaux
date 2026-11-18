@@ -356,7 +356,7 @@
       },
       "properties": {
         "name": "Domazan - Domaine des Romarins",
-        "description": "Xavier et Benoît Fabre vous accueillent à Domazan dans leur caveau de dégustation.",
+        "description": "Xavier et Benoît Fabre vous accueillent à Domazan dans leur caveau de dégustation. Vous pourrez découvrir les vins du domaine ainsi qu'une sélection de produits du terroir et de vins de toute la France et des oeuvres de street-art.\nExploitation familiale depuis 4 générations, le domaine des romarins vous accueille tous les jours pour découvrir ses vins, son jus de raisin et sa sélection de produits du terroir\n9h30-11h45 14h30-18h30 du lundi au samedi\ncontact@domainedesromarins.fr",
         "Adresse": "113 Route d'Estezargues, 30390 DOMAZAN",
         "liens": "www.domainedesromarins.fr",
         "categorie": "Huiles d'olives",
@@ -365,7 +365,8 @@
         "site_nom": "Domazan - Domaine des Romarins",
         "site_lat": 43.930294,
         "site_lon": 4.649119,
-        "site_description": "Xavier et Benoît Fabre vous accueillent à Domazan dans leur caveau de dégustation. Vous pourrez découvrir les vins du domaine ainsi qu'une sélection de produits du terroir et de vins de toute la France et des oeuvres de street-art.\nExploitation familiale depuis 4 générations, le domaine des romarins vous accueille tous les jours pour découvrir ses vins, son jus de raisin et sa sélection de produits du terroir\n9h30-11h45 14h30-18h30 du lundi au samedi\ncontact@domainedesromarins.fr"
+        "site_description": "Xavier et Benoît Fabre vous accueillent à Domazan dans leur caveau de dégustation. Vous pourrez découvrir les vins du domaine ainsi qu'une sélection de produits du terroir et de vins de toute la France et des oeuvres de street-art.\nExploitation familiale depuis 4 générations, le domaine des romarins vous accueille tous les jours pour découvrir ses vins, son jus de raisin et sa sélection de produits du terroir\n9h30-11h45 14h30-18h30 du lundi au samedi\ncontact@domainedesromarins.fr",
+        "tel": ""
       }
     },
     {
@@ -2110,6 +2111,317 @@
         "liens": "https://app.cagette.net/sandrine-jouve-apicultrice-aramon",
         "categorie": "Miel",
         "icone": "miel"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.5680407,
+          43.9577983
+        ]
+      },
+      "properties": {
+        "name": "Mas de la Martyère",
+        "categorie": "Légumes et fruits",
+        "description": "",
+        "Adresse": "13 Rue de Bagnols, 30210 Castillon-du-Gard",
+        "tel": "04 66 20 01 26 / 06 28 45 11 97 / 06 26 32 12 68",
+        "liens": "",
+        "icone": "fruits_legumes",
+        "site_id": "site_mwlvcyso_8kab7",
+        "site_nom": "Mas de la Martyère",
+        "site_lat": 43.9577983,
+        "site_lon": 4.5680407,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.568593204021455,
+          43.95769600298111
+        ]
+      },
+      "properties": {
+        "name": "Mas de la Martyère",
+        "categorie": "Oeufs",
+        "description": "",
+        "Adresse": "13 Rue de Bagnols, 30210 Castillon-du-Gard",
+        "tel": "04 66 20 01 26 / 06 28 45 11 97 / 06 26 32 12 68",
+        "liens": "",
+        "icone": "oeufs",
+        "site_id": "site_mwlvcyso_8kab7",
+        "site_nom": "Mas de la Martyère",
+        "site_lat": 43.9577983,
+        "site_lon": 4.5680407,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.568593204021455,
+          43.95769600298111
+        ]
+      },
+      "properties": {
+        "name": "Mas de la Martyère",
+        "categorie": "Boucheries",
+        "description": "Volaille",
+        "Adresse": "13 Rue de Bagnols, 30210 Castillon-du-Gard",
+        "tel": "04 66 20 01 26 / 06 28 45 11 97 / 06 26 32 12 68",
+        "liens": "",
+        "icone": "boucheries",
+        "site_id": "site_mwlvcyso_8kab7",
+        "site_nom": "Mas de la Martyère",
+        "site_lat": 43.9577983,
+        "site_lon": 4.5680407,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.5685985684394845,
+          43.95769793377593
+        ]
+      },
+      "properties": {
+        "name": "Mas de la Martyère",
+        "categorie": "Conserves",
+        "description": "",
+        "Adresse": "13 Rue de Bagnols, 30210 Castillon-du-Gard",
+        "tel": "04 66 20 01 26 / 06 28 45 11 97 / 06 26 32 12 68",
+        "liens": "",
+        "icone": "conserves",
+        "site_id": "site_mwlvcyso_8kab7",
+        "site_nom": "Mas de la Martyère",
+        "site_lat": 43.9577983,
+        "site_lon": 4.5680407,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.643566310405732,
+          43.885291545069975
+        ]
+      },
+      "properties": {
+        "name": "Aramon Théziers Vignerons",
+        "categorie": "Vin",
+        "description": "",
+        "Adresse": "3464 Rte de Montfrin, 30390 Aramon",
+        "tel": "04 66 57 40 08",
+        "liens": "",
+        "icone": "vin",
+        "site_id": "site_mwlvpzwr_mh5z4",
+        "site_nom": "Aramon Théziers Vignerons",
+        "site_lat": 43.885291545069975,
+        "site_lon": 4.643566310405732,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.5925829,
+          43.9648028
+        ]
+      },
+      "properties": {
+        "name": "Vignobles David",
+        "categorie": "Vin",
+        "description": "",
+        "Adresse": "3 chemin de la Clastre, 30210 Saint-Hilaire-d'Ozilhan",
+        "tel": "04 66 37 03 99 / 06 62 06 70 12",
+        "liens": "https://vignoblesdavid.plugwine.com",
+        "icone": "vin",
+        "site_id": "site_mwlvv4g7_ywfib",
+        "site_nom": "Vignobles David",
+        "site_lat": 43.9648028,
+        "site_lon": 4.5925829,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.592499732971192,
+          43.9696734469139
+        ]
+      },
+      "properties": {
+        "name": "Domaine de l'Olivier",
+        "categorie": "Vin",
+        "description": "Domaine viticole familial\nOuverture : 9h-12h & 14h-18h30",
+        "Adresse": "1 Rue de la Clastre, 30210 Saint-Hilaire-d'Ozilhan",
+        "tel": "06 01 02 23 14",
+        "liens": "robin.bastide@yahoo.fr",
+        "icone": "vin",
+        "site_id": "site_mwlw0lyb_oe65i",
+        "site_nom": "Domaine de l'Olivier",
+        "site_lat": 43.9696734469139,
+        "site_lon": 4.592499732971192
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.63850498199463,
+          43.950192460407486
+        ]
+      },
+      "properties": {
+        "name": "Domaine de Pierredon",
+        "categorie": "Vin",
+        "description": "Domaine Familial produisant du vin et de l'huile d'olive. Distingué lors de tous les concours nationaux et internationaux.\nPrix d'Excellence du Concours Général Agricole de Paris 2009, 2010, 2011, 2016, 2017, 2018 et 2023.\nAu moulin vous trouverez les vins et les différentes huile d'olive du domaine, ainsi qu'une sélection des meilleurs produits régionaux. Vous trouverez également une sélection de cosmétiques à base d''huile d'olive.\nProduits secs et conserves, Huile d'Olive, Vin, Jus de fruit\nOuverture de 9H30-12H 14H-18H30 du lundi au samedi",
+        "Adresse": "Chemin de la Distillerie, 30390 ESTÉZARGUES",
+        "tel": "04 66 04 05 89 & 06 20 08 40 40",
+        "liens": "http://www.moulin-pierredon.com/  -  contact@moulin-pierredon.com",
+        "icone": "vin",
+        "site_id": "site_mwkfzx21_n3x5y",
+        "site_nom": "Domaine de Pierredon",
+        "site_lat": 43.950175,
+        "site_lon": 4.638401,
+        "site_description": "Domaine Familial produisant du vin et de l'huile d'olive. Distingué lors de tous les concours nationaux et internationaux.\nPrix d'Excellence du Concours Général Agricole de Paris 2009, 2010, 2011, 2016, 2017, 2018 et 2023.\nAu moulin vous trouverez les vins et les différentes huile d'olive du domaine, ainsi qu'une sélection des meilleurs produits régionaux. Vous trouverez également une sélection de cosmétiques à base d''huile d'olive.\nProduits secs et conserves, Huile d'Olive, Vin, Jus de fruit\nOuverture de 9H30-12H 14H-18H30 du lundi au samedi"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.6491479873657235,
+          43.93055441592958
+        ]
+      },
+      "properties": {
+        "name": "Domazan - Domaine des Romarins",
+        "categorie": "Conserves",
+        "description": "Xavier et Benoît Fabre vous accueillent à Domazan dans leur caveau de dégustation. Vous pourrez découvrir les vins du domaine ainsi qu'une sélection de produits du terroir et de vins de toute la France et des oeuvres de street-art.\nExploitation familiale depuis 4 générations, le domaine des romarins vous accueille tous les jours pour découvrir ses vins, son jus de raisin et sa sélection de produits du terroir\n9h30-11h45 14h30-18h30 du lundi au samedi\ncontact@domainedesromarins.fr",
+        "Adresse": "113 Route d'Estezargues, 30390 DOMAZAN",
+        "tel": "04 66 57 43 80 & 04.66.57.43.80",
+        "liens": "domainedesromarins.fr",
+        "icone": "conserves",
+        "site_id": "site_mwkg3r71_qxneg",
+        "site_nom": "Domazan - Domaine des Romarins",
+        "site_lat": 43.930294,
+        "site_lon": 4.649119,
+        "site_description": "Xavier et Benoît Fabre vous accueillent à Domazan dans leur caveau de dégustation. Vous pourrez découvrir les vins du domaine ainsi qu'une sélection de produits du terroir et de vins de toute la France et des oeuvres de street-art.\nExploitation familiale depuis 4 générations, le domaine des romarins vous accueille tous les jours pour découvrir ses vins, son jus de raisin et sa sélection de produits du terroir\n9h30-11h45 14h30-18h30 du lundi au samedi\ncontact@domainedesromarins.fr"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.6386123,
+          43.9471278
+        ]
+      },
+      "properties": {
+        "name": "Les Vignerons d'Estézargues",
+        "categorie": "Vin",
+        "description": "Créée en 1965, notre coopérative gardoise réunit dix vignerons au sein d’une même cave : chacun possède son identité et sa façon de travailler. Nous avons pris le parti de vinifier sans intrant depuis plus de vingt ans, avec des fermentations spontanées, sans collage, ni filtration. Nous élaborons des cuvées spécifiques (les domaines) et des cuvées réunissant tous les vignerons : un sens du collectif qui milite pour nos appellations Côtes-du-Rhône et Côtes-du-Rhône-Villages Signargues !\nOuverture de 9H00-12H 14H-18H00 du lundi au samedi",
+        "Adresse": "478 Rte des Grès, 30390 Estézargues",
+        "tel": "04 66 57 03 64",
+        "liens": "https://www.facebook.com/vigneronsdestezargues//  // contact@vins-estezargues.com",
+        "icone": "vin",
+        "site_id": "site_mwlwwi8z_h8zcn",
+        "site_nom": "Les Vignerons d'Estézargues",
+        "site_lat": 43.9471278,
+        "site_lon": 4.6386123,
+        "site_description": "Créée en 1965, notre coopérative gardoise réunit dix vignerons au sein d’une même cave : chacun possède son identité et sa façon de travailler. Nous avons pris le parti de vinifier sans intrant depuis plus de vingt ans, avec des fermentations spontanées, sans collage, ni filtration. Nous élaborons des cuvées spécifiques (les domaines) et des cuvées réunissant tous les vignerons : un sens du collectif qui milite pour nos appellations Côtes-du-Rhône et Côtes-du-Rhône-Villages Signargues !\nOuverture de 9H00-12H 14H-18H00 du lundi au samedi"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.50929492712021,
+          43.96676811539282
+        ]
+      },
+      "properties": {
+        "name": "La Boutique Paysanne d'Henri Janier",
+        "categorie": "Légumes et fruits",
+        "description": "Vente directe à la Boutique Paysanne de mes produits (fruits, légumes, oeufs et huile d'olives) issus de la permaculture et maraîchage sol vivant. Production locale.  Petite sélection également de produits locaux tels que miels, fromages, vins, bières et épices.\n\nMercredis et samedis de 9h à 12h30",
+        "Adresse": "137 Chem. des Terraillers, 30210 Vers-Pont-du-Gard",
+        "tel": "06.58.76.87.43",
+        "liens": "henri.janier.maraicher.bio@gmail.com",
+        "icone": "fruits_legumes",
+        "site_id": "site_mwlx2brj_gzypw",
+        "site_nom": "La Boutique Paysanne d'Henri Janier",
+        "site_lat": 43.9667681,
+        "site_lon": 4.5092949,
+        "site_description": "Vente directe à la Boutique Paysanne de mes produits (fruits, légumes, oeufs et huile d'olives) issus de la permaculture et maraîchage sol vivant. Production locale.  Petite sélection également de produits locaux tels que miels, fromages, vins, bières et épices.\n\nMercredis et samedis de 9h à 12h30"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.5092976093292245,
+          43.96676618489274
+        ]
+      },
+      "properties": {
+        "name": "La Boutique Paysanne d'Henri Janier",
+        "categorie": "Oeufs",
+        "description": "Vente directe à la Boutique Paysanne de mes produits (fruits, légumes, oeufs et huile d'olives) issus de la permaculture et maraîchage sol vivant. Production locale.  Petite sélection également de produits locaux tels que miels, fromages, vins, bières et épices.\n\nMercredis et samedis de 9h à 12h30",
+        "Adresse": "137 Chem. des Terraillers, 30210 Vers-Pont-du-Gard",
+        "tel": "06.58.76.87.43",
+        "liens": "henri.janier.maraicher.bio@gmail.com",
+        "icone": "oeufs",
+        "site_id": "site_mwlx2brj_gzypw",
+        "site_nom": "La Boutique Paysanne d'Henri Janier",
+        "site_lat": 43.9667681,
+        "site_lon": 4.5092949,
+        "site_description": "Vente directe à la Boutique Paysanne de mes produits (fruits, légumes, oeufs et huile d'olives) issus de la permaculture et maraîchage sol vivant. Production locale.  Petite sélection également de produits locaux tels que miels, fromages, vins, bières et épices.\n\nMercredis et samedis de 9h à 12h30"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.509286880493165,
+          43.96676618489274
+        ]
+      },
+      "properties": {
+        "name": "La Boutique Paysanne d'Henri Janier",
+        "categorie": "Huiles d'olives",
+        "description": "Vente directe à la Boutique Paysanne de mes produits (fruits, légumes, oeufs et huile d'olives) issus de la permaculture et maraîchage sol vivant. Production locale.  Petite sélection également de produits locaux tels que miels, fromages, vins, bières et épices.\n\nMercredis et samedis de 9h à 12h30",
+        "Adresse": "137 Chem. des Terraillers, 30210 Vers-Pont-du-Gard",
+        "tel": "06.58.76.87.43",
+        "liens": "henri.janier.maraicher.bio@gmail.com",
+        "icone": "huile_olive",
+        "site_id": "site_mwlx2brj_gzypw",
+        "site_nom": "La Boutique Paysanne d'Henri Janier",
+        "site_lat": 43.9667681,
+        "site_lon": 4.5092949,
+        "site_description": "Vente directe à la Boutique Paysanne de mes produits (fruits, légumes, oeufs et huile d'olives) issus de la permaculture et maraîchage sol vivant. Production locale.  Petite sélection également de produits locaux tels que miels, fromages, vins, bières et épices.\n\nMercredis et samedis de 9h à 12h30"
       }
     }
   ]
