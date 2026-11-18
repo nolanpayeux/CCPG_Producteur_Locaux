@@ -2423,6 +2423,198 @@
         "site_lon": 4.5092949,
         "site_description": "Vente directe à la Boutique Paysanne de mes produits (fruits, légumes, oeufs et huile d'olives) issus de la permaculture et maraîchage sol vivant. Production locale.  Petite sélection également de produits locaux tels que miels, fromages, vins, bières et épices.\n\nMercredis et samedis de 9h à 12h30"
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.5131385,
+          43.9599338
+        ]
+      },
+      "properties": {
+        "name": "La Marquise de Vers",
+        "categorie": "Légumes et fruits",
+        "description": "Producteurs à Vers-Pont-du-Gard, nous vous proposons nos fraises, nos asperges et notre huile d'olive. Venez retrouver le goût authentique de nos récoltes de saison en vente direct à la propriété ! On vous attend avec plaisir.\n\nLundi au samedi 9h-12h / 14h30-18h30 / dimanches et jours fériés 9h-12h",
+        "Adresse": "153 Chem. de la Marquise, 30210 Vers-Pont-du-Gard",
+        "tel": "06 18 15 28 95",
+        "liens": "marquisedevers@orange.fr",
+        "icone": "fruits_legumes",
+        "site_id": "site_mwlxpj81_15y1u",
+        "site_nom": "La Marquise de Vers",
+        "site_lat": 43.9599338,
+        "site_lon": 4.5131385,
+        "site_description": "Producteurs à Vers-Pont-du-Gard, nous vous proposons nos fraises, nos asperges et notre huile d'olive. Venez retrouver le goût authentique de nos récoltes de saison en vente direct à la propriété ! On vous attend avec plaisir.\n\nLundi au samedi 9h-12h / 14h30-18h30 / dimanches et jours fériés 9h-12h"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.513559639453889,
+          43.95983142373187
+        ]
+      },
+      "properties": {
+        "name": "La Marquise de Vers",
+        "categorie": "Huiles d'olives",
+        "description": "Producteurs à Vers-Pont-du-Gard, nous vous proposons nos fraises, nos asperges et notre huile d'olive. Venez retrouver le goût authentique de nos récoltes de saison en vente direct à la propriété ! On vous attend avec plaisir.\n\nLundi au samedi 9h-12h / 14h30-18h30 / dimanches et jours fériés 9h-12h",
+        "Adresse": "153 Chem. de la Marquise, 30210 Vers-Pont-du-Gard",
+        "tel": "06 18 15 28 95",
+        "liens": "marquisedevers@orange.fr",
+        "icone": "huile_olive",
+        "site_id": "site_mwlxpj81_15y1u",
+        "site_nom": "La Marquise de Vers",
+        "site_lat": 43.9599338,
+        "site_lon": 4.5131385,
+        "site_description": "Producteurs à Vers-Pont-du-Gard, nous vous proposons nos fraises, nos asperges et notre huile d'olive. Venez retrouver le goût authentique de nos récoltes de saison en vente direct à la propriété ! On vous attend avec plaisir.\n\nLundi au samedi 9h-12h / 14h30-18h30 / dimanches et jours fériés 9h-12h"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.6023273,
+          43.9291578
+        ]
+      },
+      "properties": {
+        "name": "Vignobles Boudinaud",
+        "categorie": "Huiles d'olives",
+        "description": "Lieu établit depuis 4 siècle où nous y vinifions toutes les cuvées. Celles-ci disponibles au caveau à la même adresse.\n\n08h-12h",
+        "Adresse": "43 Grand Rue, 30210 Fournès",
+        "tel": "04 66 37 27 23",
+        "liens": "contact.vignoblesboudinaud@gmail.com",
+        "icone": "huile_olive",
+        "site_id": "site_mwlyyo95_9z866",
+        "site_nom": "Vignobles Boudinaud",
+        "site_lat": 43.9291578,
+        "site_lon": 4.6023273,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.6026813983917245,
+          43.92934131065236
+        ]
+      },
+      "properties": {
+        "name": "Vignobles Boudinaud",
+        "categorie": "Vin Bio",
+        "description": "Lieu établit à Fournès depuis 4 siècles où nous y vinifions toutes les cuvées. Celles-ci disponibles au caveau, à la même adresse.\n\n08h-12h",
+        "Adresse": "43 Grand Rue, 30210 Fournès",
+        "tel": "04 66 37 27 23",
+        "liens": "contact.vignoblesboudinaud@gmail.com",
+        "icone": "vin_bio",
+        "site_id": "site_mwlyyo95_9z866",
+        "site_nom": "Vignobles Boudinaud",
+        "site_lat": 43.9291578,
+        "site_lon": 4.6023273,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.6026813983917245,
+          43.92934131065236
+        ]
+      },
+      "properties": {
+        "name": "Vignobles Boudinaud",
+        "categorie": "Vin",
+        "description": "Lieu établit à Fournès depuis 4 siècles où nous y vinifions toutes les cuvées. Celles-ci disponibles au caveau, à la même adresse.\n\n08h-12h",
+        "Adresse": "43 Grand Rue, 30210 Fournès",
+        "tel": "04 66 37 27 23",
+        "liens": "contact.vignoblesboudinaud@gmail.com",
+        "icone": "vin",
+        "site_id": "site_mwlyyo95_9z866",
+        "site_nom": "Vignobles Boudinaud",
+        "site_lat": 43.9291578,
+        "site_lon": 4.6023273,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.6680737,
+          43.9475121
+        ]
+      },
+      "properties": {
+        "name": "Château du Bosc",
+        "categorie": "Vin Bio",
+        "description": "AB, végan, vin méthode nature, 1étoile au guide Michelin tourisme\n\nOuverture : sur demande",
+        "Adresse": "651 Chemin du Bosc",
+        "tel": "04 66 57 65 11",
+        "liens": "www.chateaudebosc.fr / vin@chateaudebosc.fr",
+        "icone": "vin_bio",
+        "site_id": "site_mwlz5u9w_2ck00",
+        "site_nom": "Château de Bosc",
+        "site_lat": 43.9475121,
+        "site_lon": 4.6680737,
+        "site_description": "AB, végan, vin méthode nature, 1étoile au guide Michelin tourisme\n\nOuverture : sur demande"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.667856395244599,
+          43.94768591935604
+        ]
+      },
+      "properties": {
+        "name": "Château du Bosc",
+        "categorie": "Vin",
+        "description": "AB, végan, vin méthode nature, 1étoile au guide Michelin tourisme\n\nOuverture : sur demande",
+        "Adresse": "651 Chemin du Bosc, 30390 Domazan",
+        "tel": "04 66 57 65 11",
+        "liens": "www.chateaudebosc.fr",
+        "icone": "vin",
+        "site_id": "site_mwlz5u9w_2ck00",
+        "site_nom": "Château de Bosc",
+        "site_lat": 43.9475121,
+        "site_lon": 4.6680737,
+        "site_description": "AB, végan, vin méthode nature, 1étoile au guide Michelin tourisme\n\nOuverture : sur demande"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.668116569519044,
+          43.94761833011375
+        ]
+      },
+      "properties": {
+        "name": "Château de Bosc",
+        "categorie": "Huiles d'olives",
+        "description": "AB, végan, vin méthode nature, 1étoile au guide Michelin tourisme\n\nOuverture : sur demande",
+        "Adresse": "651 Chemin du Bosc, 30390 Domazan",
+        "tel": "04 66 57 65 11",
+        "liens": "www.chateaudebosc.fr",
+        "icone": "huile_olive",
+        "site_id": "site_mwlz5u9w_2ck00",
+        "site_nom": "Château de Bosc",
+        "site_lat": 43.9475121,
+        "site_lon": 4.6680737,
+        "site_description": "AB, végan, vin méthode nature, 1étoile au guide Michelin tourisme\n\nOuverture : sur demande"
+      }
     }
   ]
 }
