@@ -2103,14 +2103,18 @@
       },
       "properties": {
         "name": "Miellerie à travers champ",
-        "description": "\"Le miel de nos abeilles est le reflet des paysages mellifères du Sud-Est de la France consciencieusement sélectionnés. Au plaisir, de partager ces cadeaux de Dame-Nature et Dames-Abeilles!\"\n\nProduits de la ruche: Miel et Pollen frais local - Miels de cru régionaux - bonbons artisanaux - cire - propolis\n\nOuverture :  le jeudi de 16h30 à 19h",
+        "description": "Le miel de nos abeilles est le reflet des paysages mellifères du Sud-Est de la France consciencieusement sélectionnés. Au plaisir, de partager ces cadeaux de Dame-Nature et Dames-Abeilles!\n\nProduits de la ruche: Miel et Pollen frais local - Miels de cru régionaux - bonbons artisanaux - cire - propolis\n\nOuverture :  le jeudi de 16h30 à 19h",
         "Adresse": "725 Route de théziers 30390 Aramon",
         "codeco": "30012",
         "tel": "06.12.49.34.71",
         "nom": "SANDRINE JOUVE",
         "liens": "https://app.cagette.net/sandrine-jouve-apicultrice-aramon",
         "categorie": "Miel",
-        "icone": "miel"
+        "icone": "miel",
+        "site_id": "site_mwm6iu64_cl9yb",
+        "site_nom": "Miellerie à travers champ",
+        "site_lat": 43.89521,
+        "site_lon": 4.66934
       }
     },
     {
@@ -2614,6 +2618,198 @@
         "site_lat": 43.9475121,
         "site_lon": 4.6680737,
         "site_description": "AB, végan, vin méthode nature, 1étoile au guide Michelin tourisme\n\nOuverture : sur demande"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.623549,
+          43.9022177
+        ]
+      },
+      "properties": {
+        "name": "Delacroix Kerhoas",
+        "categorie": "Légumes et fruits",
+        "description": "TOUT EN BIO !",
+        "Adresse": "Rue des Faubourgs, 30390 Théziers",
+        "tel": "06 33 18 50 80",
+        "liens": "http://delacroixkerhoas.com/ / earltdk@gmail.com",
+        "icone": "fruits_legumes",
+        "site_id": "site_mwm473te_b4qtw",
+        "site_nom": "Delacroix Kerhoas",
+        "site_lat": 43.9022177,
+        "site_lon": 4.623549,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.623996913433076,
+          43.902343318431534
+        ]
+      },
+      "properties": {
+        "name": "Delacroix Kerhoas",
+        "categorie": "Vin Bio",
+        "description": "TOUT EN BIO !",
+        "Adresse": "Rue des Faubourgs, 30390 Théziers",
+        "tel": "06 33 18 50 80",
+        "liens": "http://delacroixkerhoas.com/ / earltdk@gmail.com",
+        "icone": "vin_bio",
+        "site_id": "site_mwm473te_b4qtw",
+        "site_nom": "Delacroix Kerhoas",
+        "site_lat": 43.9022177,
+        "site_lon": 4.623549,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.623996913433076,
+          43.902343318431534
+        ]
+      },
+      "properties": {
+        "name": "Delacroix Kerhoas",
+        "categorie": "Huiles d'olives",
+        "description": "TOUT EN BIO !",
+        "Adresse": "Rue des Faubourgs, 30390 Théziers",
+        "tel": "06 33 18 50 80",
+        "liens": "http://delacroixkerhoas.com/ / earltdk@gmail.com",
+        "icone": "huile_olive",
+        "site_id": "site_mwm473te_b4qtw",
+        "site_nom": "Delacroix Kerhoas",
+        "site_lat": 43.9022177,
+        "site_lon": 4.623549,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.5237896,
+          43.9675191
+        ]
+      },
+      "properties": {
+        "name": "Miellerie de l'Abeille Rouge",
+        "categorie": "Miel",
+        "description": "Petite exploitation apicole de 300 ruches ,nous vous proposons 5 a 6 variétés de miel produit a moins de 100 km autour du pont du gard. Nous sommes également producteur de nougat blanc et de nougat noir\n\nOuverture : sur demande",
+        "Adresse": "2 Rue des Écoles, 30210 Vers-Pont-du-Gard",
+        "tel": "06 98 10 32 25",
+        "liens": "www.labeillerouge.fr",
+        "icone": "miel",
+        "site_id": "site_mwm5hqzc_m96fj",
+        "site_nom": "Miellerie de l'Abeille Rouge",
+        "site_lat": 43.9675191,
+        "site_lon": 4.5237896,
+        "site_description": "Petite exploitation apicole de 300 ruches ,nous vous proposons 5 a 6 variétés de miel produit a moins de 100 km autour du pont du gard. Nous sommes également producteur de nougat blanc et de nougat noir\n\nOuverture : sur demande"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.5388824,
+          43.9303555
+        ]
+      },
+      "properties": {
+        "name": "Domaine du Petit Olivier Moulin Cante Perdrix",
+        "categorie": "Huiles d'olives",
+        "description": "Huile d'olive vierge extra Bio Médaille d'Or au Concours Agricole\n\nOuverture : 9h/12h - 14h/18h du mardi au samedi",
+        "Adresse": "10 Chem. du Sablas, 30210 Saint-Bonnet-du-Gard",
+        "tel": "04 66 37 34 89",
+        "liens": "contact.moulin@lepetitolivier.fr",
+        "icone": "huile_olive",
+        "site_id": "site_mwm5rhio_rf28x",
+        "site_nom": "Domaine du Petit Olivier Moulin Cante Perdrix",
+        "site_lat": 43.9303555,
+        "site_lon": 4.5388824,
+        "site_description": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.6517712,
+          43.9286729
+        ]
+      },
+      "properties": {
+        "name": "Domaine de Bellevue Meger",
+        "categorie": "Vin",
+        "description": "Domaine Viticole Familial depuis 1880.\nVins Appellation Signargues Rouge & Blanc\nCôtes-du-Rhône blanc rouge & rosé\n\nOuverture : 8h00 - 12h00 & 14h00 - 19h30 tous les jours\nPrendre Rendez-vous",
+        "Adresse": "9 Place de l'Écluse, 30390 Domazan",
+        "tel": "06.21.22.32.49",
+        "liens": "www.bellevue-meger.fr  / bellevuemeger@orange.fr",
+        "icone": "vin",
+        "site_id": "site_mwm64bd2_vk6ou",
+        "site_nom": "Domaine de Bellevue Meger",
+        "site_lat": 43.9286729,
+        "site_lon": 4.6517712,
+        "site_description": "Domaine Viticole Familial depuis 1880.\nVins Appellation Signargues Rouge & Blanc\nCôtes-du-Rhône blanc rouge & rosé\n\nOuverture : 8h00 - 12h00 & 14h00 - 19h30 tous les jours\nPrendre Rendez-vous"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.555563,
+          44.0427252
+        ]
+      },
+      "properties": {
+        "name": "DOMAINE DE PANERY",
+        "categorie": "Huiles d'olives",
+        "description": "Lieu de partage et convivialité, le domaine de Panéry vous propose de découvrir sa production de vin et huiles d'olive Bio. Prolonger votre expérience par une visite ou un déjeuner au sein du Domaine.\n\nOuverture : lundi au vendredi 10h00- 12h00 & 14h00 - 18h00 le samedi de 10h00 à 18h00 le dimanche 10h00 - 17h00",
+        "Adresse": "Panely, 30210 Pouzilhac",
+        "tel": "04 66 37 04 44",
+        "liens": "carole@panery.fr",
+        "icone": "huile_olive",
+        "site_id": "site_mwm6cvo4_kjbl8",
+        "site_nom": "DOMAINE DE PANERY",
+        "site_lat": 44.0427252,
+        "site_lon": 4.555563,
+        "site_description": "Lieu de partage et convivialité, le domaine de Panéry vous propose de découvrir sa production de vin et huiles d'olive Bio. Prolonger votre expérience par une visite ou un déjeuner au sein du Domaine.\n\nOuverture : lundi au vendredi 10h00- 12h00 & 14h00 - 18h00 le samedi de 10h00 à 18h00 le dimanche 10h00 - 17h00"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.556021690368653,
+          44.04266929197037
+        ]
+      },
+      "properties": {
+        "name": "DOMAINE DE PANERY",
+        "categorie": "Vin Bio",
+        "description": "Lieu de partage et convivialité, le domaine de Panéry vous propose de découvrir sa production de vin et huiles d'olive Bio. Prolonger votre expérience par une visite ou un déjeuner au sein du Domaine.\n\nOuverture : lundi au vendredi 10h00- 12h00 & 14h00 - 18h00 le samedi de 10h00 à 18h00 le dimanche 10h00 - 17h00",
+        "Adresse": "Panely, 30210 Pouzilhac",
+        "tel": "04 66 37 04 44",
+        "liens": "carole@panery.fr",
+        "icone": "vin_bio",
+        "site_id": "site_mwm6cvo4_kjbl8",
+        "site_nom": "DOMAINE DE PANERY",
+        "site_lat": 44.0427252,
+        "site_lon": 4.555563,
+        "site_description": "Lieu de partage et convivialité, le domaine de Panéry vous propose de découvrir sa production de vin et huiles d'olive Bio. Prolonger votre expérience par une visite ou un déjeuner au sein du Domaine.\n\nOuverture : lundi au vendredi 10h00- 12h00 & 14h00 - 18h00 le samedi de 10h00 à 18h00 le dimanche 10h00 - 17h00"
       }
     }
   ]
