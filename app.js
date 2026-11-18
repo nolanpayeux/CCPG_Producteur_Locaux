@@ -110,8 +110,17 @@ function setBasemap(mode) {
 }
 setBasemap('light');
 
-document.getElementById('btn-basemap-light').onclick = () => setBasemap('light');
-document.getElementById('btn-basemap-ortho').onclick = () => setBasemap('ortho');
+// Redessiner les liaisons après un changement de fond cartographique.
+// Ne pas déclencher refresh() dans setBasemap() : celle-ci est appelée
+// une première fois avant l'initialisation de toutes les couches.
+document.getElementById('btn-basemap-light').onclick = () => {
+  setBasemap('light');
+  refresh();
+};
+document.getElementById('btn-basemap-ortho').onclick = () => {
+  setBasemap('ortho');
+  refresh();
+};
 
 const layer = L.markerClusterGroup({
   showCoverageOnHover: false,
@@ -557,9 +566,26 @@ function drawSiteFan(groups,forEdition=false) {
         marker.on('click', () => focusSite(group, items.map(x => popup(x.f)).join('<hr class="site-separator">')));
       }
       siteFanMarkers.addLayer(marker);
-      // Trait court et discret vers le site, et non vers une position décalée d'un autre producteur.
-      L.polyline([group.position,target],{pane:'pointConnections',interactive:false,color:'#9b8780',weight:1,opacity:.34,dashArray:'2 5'})
-        .addTo(siteConnections);
+      // Trait de rattachement à la position réelle du domaine.
+      // Sur orthophoto : liseré sombre et trait corail CCPG (#E67560).
+      // Sur plan épuré : trait fin et discret en pointillés.
+      L.polyline([group.position, target], {
+        pane: 'pointConnections',
+        interactive: false,
+        color: currentBasemap === 'ortho' ? '#432722' : '#9b8780',
+        weight: currentBasemap === 'ortho' ? 5 : 1.4,
+        opacity: currentBasemap === 'ortho' ? 0.82 : 0.45,
+        dashArray: currentBasemap === 'ortho' ? null : '3 5'
+      }).addTo(siteConnections);
+      if (currentBasemap === 'ortho') {
+        L.polyline([group.position, target], {
+          pane: 'pointConnections',
+          interactive: false,
+          color: '#E67560',
+          weight: 2.8,
+          opacity: 0.95
+        }).addTo(siteConnections);
+      }
     });
   }
 }
