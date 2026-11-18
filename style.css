@@ -252,3 +252,43 @@ h1 em{font-style:normal;color:var(--ccpg-green)}
     max-height: 110px !important;
   }
 }
+
+
+/* V12 — Afficher / masquer le volet des filtres sur ordinateur */
+@media (min-width: 761px) {
+  .sidebar {
+    transition: width .3s ease, padding .3s ease, border-width .3s ease;
+  }
+  .app.sidebar-collapsed .sidebar {
+    width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    border-right-width: 0;
+    overflow: hidden;
+    visibility: hidden;
+  }
+  .sidebar-collapse {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 58px;
+    padding: 0;
+    border: 0;
+    border-radius: 0 10px 10px 0;
+    background: var(--ccpg-red);
+    color: #fff;
+    font: 700 27px/1 'DM Sans', sans-serif;
+    cursor: pointer;
+    box-shadow: 2px 2px 9px #0002;
+  }
+  .sidebar-collapse:hover { background: var(--ccpg-red-dark); }
+  .sidebar-collapse:focus-visible { outline: 3px solid #efb963; outline-offset: 3px; }
+}
+@media (max-width: 760px) {
+  .sidebar-collapse { display: none; }
+}
